@@ -13,7 +13,7 @@ Changes that affect the ***part*** of the project:
 $ git commit -m "[Project part]: [Action]: [changes description]"
 ```
 
-#### Project part
+### Project part
 
 In which part of the project changes were made.
 
@@ -21,7 +21,7 @@ For example:
 
 >*'Server'*
 
-#### Action
+### Action
 
 The type of changes made to projects since the last commit.
 
@@ -33,7 +33,7 @@ The type of changes made to projects since the last commit.
 - Remove - remove something unnecessary or what needs to be replaced. 
 - Update - improve something.
 
-#### Changes description
+### Changes description
 
 Briefly and clearly describe the changes since the last commit.
 
