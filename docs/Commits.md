@@ -31,7 +31,7 @@ The type of changes made to projects since the last commit.
 - Refactor - make code readable and maintainable.
 - Fix - fix some bug.
 - Remove - remove something unnecessary or what needs to be replaced. 
-- Update - 
+- Update - improve something.
 
 #### Changes description
 
