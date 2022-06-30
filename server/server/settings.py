@@ -13,6 +13,13 @@ https://docs.djangoproject.com/en/4.0/ref/settings/
 from pathlib import Path
 from datetime import timedelta
 import os
+import environ
+
+env = environ.Env()
+
+# Checks if env variables are not defined. If not, assign values from local.env
+if not env.get_value('SECRET_KEY', default=None):
+    environ.Env.read_env('env/local.env')
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -21,10 +28,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-0im*zfbn8s@puiwf=_*i^76&n0zmtjmal9*jt^7xtpy8x@j9_x'
+SECRET_KEY = env('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = env('DEBUG')
 
 ALLOWED_HOSTS = []
 
@@ -84,15 +91,25 @@ WSGI_APPLICATION = 'server.wsgi.application'
 #         'NAME': BASE_DIR / 'db.sqlite3',
 #     }
 # }
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': 'postgres',
+#         'USER': os.getenv('POSTGRES_USER'),
+#         'PASSWORD': os.getenv('POSTGRES_PASSWORD'),
+#         'HOST': os.getenv('POSTGRES_DB'),
+#         'PORT': os.getenv('POSTGRES_PORT'),
+#     }
+# }
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'postgres',
-        'USER': 'postgres',
-        'PASSWORD': 'postgres',
-        'HOST': 'db',
-        'PORT': '5432',
+        'ENGINE': env('DB_ENGINE'),
+        'NAME': env('POSTGRES_NAME'),
+        'USER': env('POSTGRES_USER'),
+        'PASSWORD': env('POSTGRES_PASSWORD'),
+        'HOST': env('POSTGRES_HOST'),
+        'PORT': env('POSTGRES_PORT'),
     }
 }
 

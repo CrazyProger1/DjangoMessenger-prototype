@@ -6,16 +6,28 @@ services:
     image: postgres
     volumes:
       - postgres_data:/var/lib/postgresql/data/
+    container_name: "django_messenger_db"
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
       - POSTGRES_DB=db
+      - POSTGRES_PORT=5432
+    restart: always
   web:
+    env_file:
+      - env/local_docker_compose.env
     build: .
-    command: /usr/src/django_messenger/scripts/runserver.sh
+    container_name: "django_messenger"
+    command:
+      - /usr/src/django_messenger/scripts/runserver.sh
     volumes:
       - .:/usr/src/django_messenger
+    expose:
+      - 8000
     ports:
       - "8000:8000"
+
+    depends_on:
+      - "db"
 volumes:
   postgres_data:
