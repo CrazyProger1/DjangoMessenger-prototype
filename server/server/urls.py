@@ -16,9 +16,10 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 import server.yasg_urls as yasg
+import server.auth_urls as auth
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    # path('api/v1/users/', include('auth.urls'))
 ]
 urlpatterns += yasg.urlpatterns
+urlpatterns += auth.urlpatterns
