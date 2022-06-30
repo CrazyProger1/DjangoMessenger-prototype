@@ -22,6 +22,9 @@ PSQL command:
 # CREATE DATABASE "django-messenger";
 ```
 
+Change the *'POSTGRES_USER'* and *'POSTGRES_PASSWORD'* fields to your own username and password in
+this [file](env/local.env).
+
 Then, install the dependencies:
 
 ```shell
@@ -36,4 +39,4 @@ And finally run the server:
 $ ./scripts/runserver
 ```
 
-Now the server is available [there](http://127.0.0.1:8000/).
+Now the server is available [there](http://localhost:8000/).
