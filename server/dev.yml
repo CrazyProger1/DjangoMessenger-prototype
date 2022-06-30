@@ -18,10 +18,10 @@ services:
       - env/local_docker_compose.env
     build: .
     container_name: "django_messenger"
-    command:
-      - /usr/src/django_messenger/scripts/runserver.sh
     volumes:
       - .:/usr/src/django_messenger
+    command:
+      - /usr/src/django_messenger/scripts/runserver.sh
     expose:
       - 8000
     ports:
