@@ -18,7 +18,7 @@ import environ
 env = environ.Env()
 
 # Checks if env variables are not defined. If not, assign values from local.env
-if not env.get_value('SECRET_KEY', default=None):
+if not env('SECRET_KEY', default=None):
     environ.Env.read_env('env/local.env')
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -82,26 +82,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'server.wsgi.application'
 
-# Database
-# https://docs.djangoproject.com/en/4.0/ref/settings/#databases
-
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / 'db.sqlite3',
-#     }
-# }
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.postgresql',
-#         'NAME': 'postgres',
-#         'USER': os.getenv('POSTGRES_USER'),
-#         'PASSWORD': os.getenv('POSTGRES_PASSWORD'),
-#         'HOST': os.getenv('POSTGRES_DB'),
-#         'PORT': os.getenv('POSTGRES_PORT'),
-#     }
-# }
-
 DATABASES = {
     'default': {
         'ENGINE': env('DB_ENGINE'),
@@ -134,13 +114,13 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/4.0/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = env('LANGUAGE_CODE')
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = env('TIME_ZONE')
 
-USE_I18N = True
+USE_I18N = env('USE_I18N')
 
-USE_TZ = True
+USE_TZ = env('USE_TZ')
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.0/howto/static-files/
@@ -167,7 +147,7 @@ LOGGING = {
     'loggers': {
         'django': {
             'handlers': ['console'],
-            'level': os.getenv('DJANGO_LOG_LEVEL', 'INFO'),
+            'level': env('DJANGO_LOG_LEVEL', default='INFO'),
             'propagate': False,
         },
     },
