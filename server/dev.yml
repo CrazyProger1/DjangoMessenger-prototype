@@ -20,8 +20,6 @@ services:
     container_name: "django_messenger"
     volumes:
       - .:/usr/src/django_messenger
-    command:
-      - /usr/src/django_messenger/scripts/runserver.sh
     expose:
       - 8000
     ports:
