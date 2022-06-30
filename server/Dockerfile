@@ -5,8 +5,8 @@ ENV PYTHONUNBUFFERED=1
 
 WORKDIR /usr/src/django_messenger
 
-COPY ./requirements.txt /usr/src/requirements.txt
-RUN pip install -r /usr/src/requirements.txt
+COPY ./requirements_deploy.txt /usr/src/requirements_deploy.txt
+RUN pip install -r /usr/src/requirements_deploy.txt
 
 COPY . /usr/src/django_messenger
 
