@@ -8,7 +8,13 @@ from rest_framework_simplejwt.views import (
 
 urlpatterns = [
     # user views
-    path('<int:pk>', UserViewSet.as_view({'get': 'retrieve', 'put': 'update', 'delete': 'destroy'})),
+    path('<int:pk>', UserViewSet.as_view(
+        {
+            'get': 'retrieve',
+            'put': 'update',
+            'delete': 'destroy'
+        }
+    )),
 
     # token views
     path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
@@ -17,10 +23,16 @@ urlpatterns = [
     # djoser views
     path('', djoser_views.UserViewSet.as_view({'post': 'create'}),
          name="register"),
+
     path("resend-activation/", djoser_views.UserViewSet.as_view({"post": "resend_activation"}),
          name="resend_activation"),
-    path("activation/<str:uid>/<str:token>/", djoser_views.UserViewSet.as_view({"post": "activate"}), name="activate"),
-    path("reset-password/", djoser_views.UserViewSet.as_view({"post": "reset_password"}), name="reset_password"),
+
+    path("activation/<str:uid>/<str:token>/", djoser_views.UserViewSet.as_view({"post": "activate"}),
+         name="activate"),
+
+    path("reset-password/", djoser_views.UserViewSet.as_view({"post": "reset_password"}),
+         name="reset_password"),
+
     path("reset-password-confirm/<str:uid>/<str:token>/",
          djoser_views.UserViewSet.as_view({"post": "reset_password_confirm"}),
          name="reset_password_confirm"),
