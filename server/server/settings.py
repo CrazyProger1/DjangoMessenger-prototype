@@ -31,9 +31,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = env('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = env('DEBUG')
+DEBUG = env('DEBUG', bool)
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 # Application definition
 
@@ -120,9 +120,9 @@ LANGUAGE_CODE = env('LANGUAGE_CODE')
 
 TIME_ZONE = env('TIME_ZONE')
 
-USE_I18N = env('USE_I18N')
+USE_I18N = env('USE_I18N', bool)
 
-USE_TZ = env('USE_TZ')
+USE_TZ = env('USE_TZ', bool)
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.0/howto/static-files/
@@ -159,9 +159,9 @@ REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
     'PAGE_SIZE': 100,
 
-    'DEFAULT_AUTHENTICATION_CLASSES': (
+    'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework_simplejwt.authentication.JWTAuthentication',
-    ),
+    ],
 
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.AllowAny'
@@ -173,6 +173,9 @@ REST_FRAMEWORK = {
 
     )
 }
+
+if DEBUG:
+    REST_FRAMEWORK.get('DEFAULT_AUTHENTICATION_CLASSES').append('rest_framework.authentication.SessionAuthentication')
 
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),
