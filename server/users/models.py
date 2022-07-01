@@ -8,6 +8,7 @@ class UserProfile(models.Model):
     user = models.OneToOneField(User, models.CASCADE, unique=True, verbose_name='user')
     # photo = models.ForeignKey('File', models.CASCADE, null=True, verbose_name='user photo')
     api_key = models.BinaryField(verbose_name='api key')
+    birthday_date = models.DateField(verbose_name='birthday date', null=True)
 
     class Meta:
         verbose_name = 'User profile'
