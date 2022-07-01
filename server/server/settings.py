@@ -51,7 +51,8 @@ INSTALLED_APPS = [
     'djoser',
     'drf_yasg',
 
-    'users.apps.UsersConfig'
+    'users.apps.UsersConfig',
+    'bots.apps.BotsConfig'
 ]
 
 MIDDLEWARE = [
