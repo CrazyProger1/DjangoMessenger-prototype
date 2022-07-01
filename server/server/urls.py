@@ -19,7 +19,6 @@ import server.yasg_urls as yasg
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('auth/', include('djoser.urls')),
-    path('api/v1/users/', include('users.urls'))
+    path('api/v1/users/', include('users.urls')),
 ]
 urlpatterns += yasg.urlpatterns
