@@ -15,7 +15,6 @@ from datetime import timedelta
 import os
 import environ
 
-
 env = environ.Env()
 
 # Checks if env variables are not defined. If not, assign values from local.env
@@ -58,7 +57,6 @@ INSTALLED_APPS = [
     'msgs.apps.MsgsConfig',
     'media.apps.MediaConfig'
 ]
-
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -185,8 +183,6 @@ REST_FRAMEWORK = {
 if DEBUG:
     REST_FRAMEWORK.get('DEFAULT_AUTHENTICATION_CLASSES').append('rest_framework.authentication.SessionAuthentication')
 
-
-
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
@@ -218,4 +214,3 @@ SIMPLE_JWT = {
     'SLIDING_TOKEN_LIFETIME': timedelta(minutes=5),
     'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=1),
 }
-
