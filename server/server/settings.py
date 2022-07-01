@@ -52,7 +52,8 @@ INSTALLED_APPS = [
     'drf_yasg',
 
     'users.apps.UsersConfig',
-    'bots.apps.BotsConfig'
+    'bots.apps.BotsConfig',
+    'chats.apps.ChatsConfig'
 ]
 
 MIDDLEWARE = [

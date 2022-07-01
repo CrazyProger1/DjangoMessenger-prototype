@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 
 
 class Bot(models.Model):
-    creator = models.OneToOneField(User, models.CASCADE, unique=True, verbose_name='bot creator')
+    creator = models.ForeignKey(User, models.CASCADE, verbose_name='bot creator')
     name = models.CharField(verbose_name='bot name', max_length=200)
     token = models.BinaryField(verbose_name='bot token')
 
