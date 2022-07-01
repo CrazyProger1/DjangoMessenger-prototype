@@ -22,3 +22,6 @@ class Command(BaseCommand):
             User.objects.create_superuser(username, email, password)
         except IntegrityError:
             print(f"User with username '{username}' already exists")
+            return
+
+        print(f"Admin succesefully created(name='{username}' email='{email}' password='{password}')")
