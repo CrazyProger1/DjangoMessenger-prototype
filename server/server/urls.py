@@ -17,9 +17,9 @@ from django.contrib import admin
 from django.urls import path, include
 import server.yasg_urls as yasg
 
-
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('auth/', include('djoser.urls')),
     path('api/v1/users/', include('users.urls'))
 ]
 urlpatterns += yasg.urlpatterns
