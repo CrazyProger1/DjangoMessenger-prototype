@@ -54,7 +54,8 @@ INSTALLED_APPS = [
     'users.apps.UsersConfig',
     'bots.apps.BotsConfig',
     'chats.apps.ChatsConfig',
-    'msgs.apps.MsgsConfig'
+    'msgs.apps.MsgsConfig',
+    'media.apps.MediaConfig'
 ]
 
 MIDDLEWARE = [
