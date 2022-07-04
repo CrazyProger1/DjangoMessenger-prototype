@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'djoser',
     'drf_yasg',
+    'channels'
 
     'users.apps.UsersConfig',
     'bots.apps.BotsConfig',
