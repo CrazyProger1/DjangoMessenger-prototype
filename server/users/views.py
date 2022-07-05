@@ -28,3 +28,6 @@ class UserViewSet(viewsets.ModelViewSet):
         self.redefine_get_object()
         return self.update(request, *args, **kwargs)
 
+    def update_partially_me(self, request, *args, **kwargs):
+        self.redefine_get_object()
+        return self.partial_update(request, *args, **kwargs)

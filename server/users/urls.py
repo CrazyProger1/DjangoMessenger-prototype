@@ -20,6 +20,7 @@ urlpatterns = [
         'get': 'retrieve_me',
         'delete': 'destroy_me',
         'put': 'update_me',
+        'patch': 'update_partially_me'
     })),
 
     # token views
