@@ -22,6 +22,9 @@ class User:
         self.session_filepath = session_filepath
         self.save_tokens = save_tokens
         self.host = host
+        self.id: int | None = None
+        self.first_name: str | None = None
+        self.last_name: str | None = None
 
         self._access_token: str | None = None
         self._refresh_token: str | None = None
@@ -70,6 +73,7 @@ class User:
                 data: dict = response.json()
 
                 self._access_token = data.get('access')
+                self._save_tokens()
                 return True
 
     def login(self):
@@ -80,6 +84,8 @@ class User:
             },
             'users/token'
         )
+
+        print(response.json())
 
         match response.status_code:
             case 200:
@@ -107,7 +113,7 @@ class User:
                 return True
 
             case 400:
-                raise AlreadyExistsError('User with the same name already exists')
+                raise AlreadyExistsError('A user with that username already exists')
 
     def authorize(self):
         if self._access_token and self._refresh_token:
@@ -120,3 +126,15 @@ class User:
             pass
 
         return self.login()
+
+    def change_names(self, first_name: str, last_name: str):
+        response = self.api_helper.put(
+            {
+                'first_name': first_name,
+                'last_name': last_name
+            },
+            'users',
+            self._access_token
+        )
+
+        print(response.status_code, response.text)

@@ -23,5 +23,29 @@ class APIHelper:
     def set_host(self, host: str):
         self.host = host
 
-    def post(self, json: dict, obj: str = 'users') -> requests.Response:
-        return requests.post(self.host + 'api/' + API_VERSION + '/' + obj + '/', json=json)
+    def _form_url(self, obj: str):
+        return self.host + 'api/' + API_VERSION + '/' + obj + '/'
+
+    @staticmethod
+    def _form_headers(access_token: str = None) -> dict | None:
+        if not access_token:
+            return None
+
+        headers = {
+            'Authorize': TOKEN_KEYWORD + ' ' + access_token
+        }
+        return headers
+
+    def post(self, json: dict, obj: str = 'users', access_token: str = None) -> requests.Response:
+        return requests.post(
+            url=self._form_url(obj),
+            json=json,
+            headers=self._form_headers(access_token)
+        )
+
+    def put(self, json: dict, obj: str = 'users', access_token: str = None) -> requests.Response:
+        return requests.put(
+            url=self._form_url(obj),
+            json=json,
+            headers=self._form_headers(access_token)
+        )
