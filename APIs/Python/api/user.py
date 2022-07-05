@@ -41,8 +41,36 @@ class User:
                 except json.decoder.JSONDecodeError:
                     raise SessionLoadError('Session file has invalid format')
 
-                self._access_token = tokens.get('access_token')
-                self._refresh_token = tokens.get('refresh_token')
+                self._access_token = tokens.get('access')
+                self._refresh_token = tokens.get('refresh')
+
+    def _save_tokens(self):
+        if not self.save_tokens:
+            return
+
+        with open(self.session_filepath, 'w') as session_file:
+            json.dump(
+                {
+                    'access': self._access_token,
+                    'refresh': self._refresh_token
+                },
+                session_file
+            )
+
+    def _refresh_access(self):
+        response = self.api_helper.post(
+            {
+                'refresh': self._refresh_token
+            },
+            'users/token/refresh'
+        )
+
+        match response.status_code:
+            case 200:
+                data: dict = response.json()
+
+                self._access_token = data.get('access')
+                return True
 
     def login(self):
         response = self.api_helper.post(
@@ -59,6 +87,7 @@ class User:
 
                 self._access_token = data.get('access')
                 self._refresh_token = data.get('refresh')
+                self._save_tokens()
                 return True
 
             case 401:
@@ -81,6 +110,10 @@ class User:
                 raise AlreadyExistsError('User with the same name already exists')
 
     def authorize(self):
+        if self._access_token and self._refresh_token:
+            if self._refresh_access():
+                return True
+
         try:
             self.register()
         except AlreadyExistsError:
