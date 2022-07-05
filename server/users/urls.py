@@ -5,6 +5,7 @@ from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
 )
+import djoser.urls
 
 urlpatterns = [
     # user views
@@ -15,6 +16,8 @@ urlpatterns = [
             'delete': 'destroy'
         }
     )),
+
+    path('me/', UserViewSet.as_view({'get': 'retrieve_me'})),
 
     # token views
     path('token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),

@@ -13,7 +13,7 @@ from .permissions import *
 class BotViewSet(viewsets.ModelViewSet):
     queryset = get_all_bots()
     serializer_class = BotSerializer
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (permissions.IsAuthenticated, IsOwnerOrReadOnly)
 
     def create(self, request, *args, **kwargs):
         serializer = self.serializer_class(data=request.data)
