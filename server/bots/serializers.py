@@ -3,10 +3,17 @@ from django.db import models
 from .models import *
 
 
-class BotSerializer(serializers.ModelSerializer):
+class ForOwnerBotSerializer(serializers.ModelSerializer):
     class Meta:
         model = Bot
-        fields = ('id', 'creator', 'name')
+        fields = ('id', 'creator', 'name', 'token')
         extra_kwargs = {
-            'creator': {'read_only': True}
+            'creator': {'read_only': True},
+            'token': {'read_only': True}
         }
+
+
+class CommonBotSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Bot
+        fields = ('name', 'id')

@@ -9,7 +9,7 @@ https://docs.djangoproject.com/en/4.0/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.0/ref/settings/
 """
-
+import random
 from pathlib import Path
 from datetime import timedelta
 import os
@@ -193,6 +193,8 @@ REST_FRAMEWORK = {
 
 if DEBUG:
     REST_FRAMEWORK.get('DEFAULT_AUTHENTICATION_CLASSES').append('rest_framework.authentication.SessionAuthentication')
+
+BOT_TOKEN_LENGTH = 50
 
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),
