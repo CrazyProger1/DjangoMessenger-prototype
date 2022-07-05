@@ -6,3 +6,4 @@ class Bot:
         self.id = kwargs.get('id')
         self.name = kwargs.get('name')
         self.token = kwargs.get('token')
+        self.creator_id = kwargs.get('creator')

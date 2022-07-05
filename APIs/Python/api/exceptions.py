@@ -9,3 +9,6 @@ class AlreadyExistsError(Exception):
 class WrongCredentials(Exception):
     pass
 
+
+class RefreshExpiredError(Exception):
+    pass

@@ -5,6 +5,7 @@ import requests
 from .exceptions import *
 from .config import *
 from .apihelper import *
+from .bot import *
 
 
 class User:
@@ -75,6 +76,8 @@ class User:
                 self._access_token = data.get('access')
                 self._save_tokens()
                 return True
+            case 401:
+                raise RefreshExpiredError('Refresh token is expired')
 
     def _grab_user_info(self):
         response = self.api_helper.get(
@@ -158,6 +161,32 @@ class User:
         match response.status_code:
             case 200:
                 return True
+            case 401:
+                self._refresh_access()
+                return self.change_names(first_name, last_name)
 
     def change_username(self, username: str):
         pass
+
+    def create_bot(self, name: str) -> Bot:
+        response = self.api_helper.post(
+            {
+                'name': name
+            },
+            'bots',
+            self._access_token
+        )
+
+        match response.status_code:
+            case 201:
+                data = response.json()
+
+                bot = Bot(**data)
+                return bot
+
+            case 400:
+                raise AlreadyExistsError('A bot with that name already exists')
+
+            case 401:
+                self._refresh_access()
+                return self.create_bot(name)
