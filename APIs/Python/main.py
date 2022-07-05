@@ -1,5 +1,11 @@
 import api
 
-user = api.User('user6', 'StrongPassword', 'session.json')
+user = api.User('crazy7', 'StrongPassword', 'session.json')
+print(user.first_name)
 user.authorize()
-user.change_names('Nicholas', 'Hetman')
+print(user.first_name)
+print(user.last_name)
+print(user.id)
+print(user.email)
+
+# user.change_names('Nicholas', 'Hetman')

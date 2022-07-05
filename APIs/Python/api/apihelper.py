@@ -32,7 +32,7 @@ class APIHelper:
             return None
 
         headers = {
-            'Authorize': TOKEN_KEYWORD + ' ' + access_token
+            'Authorization': TOKEN_KEYWORD + ' ' + access_token
         }
         return headers
 
@@ -43,9 +43,26 @@ class APIHelper:
             headers=self._form_headers(access_token)
         )
 
-    def put(self, json: dict, obj: str = 'users', access_token: str = None) -> requests.Response:
-        return requests.put(
+    def put(self,
+            json: dict,
+            obj: str = 'users',
+            access_token: str = None,
+            partially: bool = False) -> requests.Response:
+
+        if not partially:
+            return requests.put(
+                url=self._form_url(obj),
+                json=json,
+                headers=self._form_headers(access_token)
+            )
+        return requests.patch(
             url=self._form_url(obj),
             json=json,
+            headers=self._form_headers(access_token)
+        )
+
+    def get(self, obj: str = 'users', access_token: str = None):
+        return requests.get(
+            url=self._form_url(obj),
             headers=self._form_headers(access_token)
         )

@@ -18,7 +18,7 @@ class User:
             host: str = 'http://127.0.0.1:8000/'):
         self.username = username
         self.password = password
-        self.email_address = email_address
+        self.email = email_address
         self.session_filepath = session_filepath
         self.save_tokens = save_tokens
         self.host = host
@@ -76,6 +76,22 @@ class User:
                 self._save_tokens()
                 return True
 
+    def _grab_user_info(self):
+        response = self.api_helper.get(
+            'users/me',
+            self._access_token
+        )
+
+        match response.status_code:
+            case 200:
+                data: dict = response.json()
+                self.username = data.get('username')
+                self.id = data.get('id')
+                self.email = data.get('email')
+                self.first_name = data.get('first_name')
+                self.last_name = data.get('last_name')
+                return True
+
     def login(self):
         response = self.api_helper.post(
             {
@@ -85,8 +101,6 @@ class User:
             'users/token'
         )
 
-        print(response.json())
-
         match response.status_code:
             case 200:
                 data: dict = response.json()
@@ -94,6 +108,7 @@ class User:
                 self._access_token = data.get('access')
                 self._refresh_token = data.get('refresh')
                 self._save_tokens()
+                self._grab_user_info()
                 return True
 
             case 401:
@@ -103,7 +118,8 @@ class User:
         response = self.api_helper.post(
             {
                 'username': self.username,
-                'password': self.password
+                'password': self.password,
+                'email': self.email
             },
             'users'
         )
@@ -118,6 +134,7 @@ class User:
     def authorize(self):
         if self._access_token and self._refresh_token:
             if self._refresh_access():
+                self._grab_user_info()
                 return True
 
         try:
@@ -133,8 +150,14 @@ class User:
                 'first_name': first_name,
                 'last_name': last_name
             },
-            'users',
-            self._access_token
+            'users/me',
+            self._access_token,
+            partially=True
         )
 
-        print(response.status_code, response.text)
+        match response.status_code:
+            case 200:
+                return True
+
+    def change_username(self, username: str):
+        pass
