@@ -6,7 +6,7 @@ from bots.models import Bot
 class Chat(models.Model):
     creator = models.ForeignKey(User, models.CASCADE, verbose_name='chat creator')
     group = models.BooleanField(verbose_name='group')
-    name = models.CharField(verbose_name='chat name', max_length=200)
+    name = models.CharField(verbose_name='chat name', max_length=200, unique=True)
     private = models.BooleanField(verbose_name='private chat')
 
     class Meta:
