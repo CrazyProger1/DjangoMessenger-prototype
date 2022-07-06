@@ -22,3 +22,7 @@ def get_chat_by_id(chat_id: int, ignore_errors: bool = False):
         return Chat.objects.get(pk=chat_id)
 
     return Chat.objects.filter(pk=chat_id)
+
+
+def find_chat_members(**kwargs):
+    return ChatMember.objects.filter(**kwargs)

@@ -44,3 +44,17 @@ class IsChatFitOrReadOnly(permissions.BasePermission):
 
         if not chat.group and len(members) < 2:
             return True
+
+
+class IsInChatOrAddSelfOnly(permissions.BasePermission):
+    def has_permission(self, request, view):
+        try:
+            chat: Chat = get_chat_by_id(view.kwargs.get('chat_pk'))
+        except models.ObjectDoesNotExist:
+            return False
+
+        if request.method == 'POST' and view.kwargs.get('pk') is None:
+            return True
+
+        if find_chat_members(user=request.user, chat=chat).first():
+            return True
