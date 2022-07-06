@@ -1,6 +1,6 @@
 from django.shortcuts import render
 
-from rest_framework import permissions, viewsets, response, status
+from rest_framework import permissions, viewsets, response, status, generics
 
 from .services import *
 from .serializers import *
@@ -15,3 +15,14 @@ class ChatViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         chat = serializer.save(creator=self.request.user)
         ChatMember(user=self.request.user, chat=chat).save()
+
+
+class ChatMemberViewSet(viewsets.ModelViewSet):
+    queryset = get_all_chat_members()
+    serializer_class = ChatMemberSerializer
+    permission_classes = (IsOwnerOrReadOnly, permissions.IsAuthenticated)
+
+    def get_queryset(self):
+        chat_id = self.kwargs['pk']
+        members = get_chat_members_by_chat_id(chat_id)
+        return members
