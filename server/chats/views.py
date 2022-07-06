@@ -21,7 +21,7 @@ class ChatViewSet(viewsets.ModelViewSet):
 class ChatMemberViewSet(viewsets.ModelViewSet):
     queryset = get_all_chat_members()
     serializer_class = ChatMemberSerializer
-    permission_classes = (permissions.IsAuthenticated, IsChatOwnerOrChatIsPublicOrReadOnly)
+    permission_classes = (permissions.IsAuthenticated, IsChatOwnerOrChatIsPublicOrReadOnly, IsChatFitOrReadOnly)
 
     def get_queryset(self):
         chat_id = self.kwargs['pk']

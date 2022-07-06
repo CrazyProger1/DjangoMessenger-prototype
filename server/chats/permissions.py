@@ -25,3 +25,22 @@ class IsChatOwnerOrChatIsPublicOrReadOnly(permissions.BasePermission):
 
         if chat.creator == request.user:
             return True
+
+
+class IsChatFitOrReadOnly(permissions.BasePermission):
+    def has_permission(self, request, view):
+        if request.method in permissions.SAFE_METHODS:
+            return True
+
+        try:
+            chat: Chat = get_chat_by_id(view.kwargs.get('pk'))
+        except models.ObjectDoesNotExist:
+            return False
+
+        if chat.group:
+            return True
+
+        members = get_chat_members_by_chat(chat)
+
+        if not chat.group and len(members) < 2:
+            return True
