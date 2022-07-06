@@ -53,8 +53,18 @@ class IsInChatOrAddSelfOnly(permissions.BasePermission):
         except models.ObjectDoesNotExist:
             return False
 
-        if request.method == 'POST' and view.kwargs.get('pk') is None:
+        user_to_add_pk = request.data.get('user')
+        request_user = request.user
+
+        # checks if in chat
+        user_chat_member = find_chat_members(user=request_user, chat=chat).first()
+
+        if user_chat_member:
             return True
 
-        if find_chat_members(user=request.user, chat=chat).first():
-            return True
+        # checks if user adds self
+        if user_to_add_pk is not None:
+            if request.method == 'POST' \
+                    and view.kwargs.get('pk') is None \
+                    and user_to_add_pk == request_user.pk:
+                return True

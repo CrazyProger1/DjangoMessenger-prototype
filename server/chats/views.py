@@ -25,7 +25,8 @@ class ChatMemberViewSet(viewsets.ModelViewSet):
         permissions.IsAuthenticated,
         IsChatOwnerOrChatIsPublicOrReadOnly,
         IsChatFitOrReadOnly,
-        IsInChatOrAddSelfOnly
+        IsInChatOrAddSelfOnly,
+
     )
 
     def get_queryset(self):
