@@ -5,7 +5,7 @@ from .models import *
 class ChatSerializer(serializers.ModelSerializer):
     class Meta:
         model = Chat
-        fields = ('id', 'creator', 'group', 'name')
+        fields = ('id', 'creator', 'group', 'name', 'private')
         extra_kwargs = {
             'creator': {'read_only': True}
         }
