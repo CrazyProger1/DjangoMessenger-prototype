@@ -34,6 +34,17 @@ class ChatMemberViewSet(viewsets.ModelViewSet):
         members = get_chat_members_by_chat_id(chat_id)
         return members
 
+    def validate_not_existing(self):
+        if self.request.data.get('user') is not None:
+            return find_chat_members(chat=self.kwargs.get('chat_pk'),
+                                     user=self.request.data.get('user')).first() is None
+        else:
+            return find_chat_members(chat=self.kwargs.get('chat_pk'),
+                                     user=self.request.data.get('bot')).first() is None
+
     def perform_create(self, serializer):
+        if not self.validate_not_existing():
+            raise serializers.ValidationError({'detail', 'Chat member already exists'})
+
         chat: Chat = get_chat_by_id(self.kwargs.get('chat_pk'))
         serializer.save(chat=chat)

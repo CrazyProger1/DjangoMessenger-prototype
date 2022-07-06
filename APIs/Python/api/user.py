@@ -221,4 +221,8 @@ class User:
             self._access_token
         )
 
-        print(response.status_code, response.content)
+        match response.status_code:
+            case 201:
+                return True
+            case 400:
+                raise AlreadyExistsError('Member already in chat')
