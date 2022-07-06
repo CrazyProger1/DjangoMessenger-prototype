@@ -21,7 +21,7 @@ class ChatViewSet(viewsets.ModelViewSet):
 class ChatMemberViewSet(viewsets.ModelViewSet):
     queryset = get_all_chat_members()
     serializer_class = ChatMemberSerializer
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (permissions.IsAuthenticated, IsChatOwnerOrChatIsPublicOrReadOnly)
 
     def get_queryset(self):
         chat_id = self.kwargs['pk']
@@ -29,15 +29,5 @@ class ChatMemberViewSet(viewsets.ModelViewSet):
         return members
 
     def perform_create(self, serializer):
-        try:
-            serializer.save(chat=get_chat_by_id(self.kwargs.get('pk')))
-        except models.ObjectDoesNotExist:
-            raise serializers.ValidationError({'chat': 'Chat with this id does not exist.'})
-
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        self.perform_create(serializer)
-        headers = self.get_success_headers(serializer.data)
-        return response.Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+        chat: Chat = get_chat_by_id(self.kwargs.get('pk'))
+        serializer.save(chat=chat)
