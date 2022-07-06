@@ -132,7 +132,7 @@ class User:
                 return True
 
             case 400:
-                raise AlreadyExistsError('A user with that username already exists')
+                raise AlreadyExistsError('User with that username already exists')
 
     def authorize(self):
         if self._access_token and self._refresh_token:
@@ -185,8 +185,28 @@ class User:
                 return bot
 
             case 400:
-                raise AlreadyExistsError('A bot with that name already exists')
+                raise AlreadyExistsError('Bot with this bot name already exists')
 
             case 401:
                 self._refresh_access()
                 return self.create_bot(name)
+
+    def create_chat(self, name: str, group: bool = False, private: bool = False) -> int:
+        response = self.api_helper.post(
+            {
+                'name': name,
+                'group': group,
+                'private': private
+            },
+            'chats',
+            self._access_token
+        )
+        match response.status_code:
+            case 201:
+                data = response.json()
+
+                chat_id = data.get('id')
+                return chat_id
+
+            case 400:
+                raise AlreadyExistsError('Chat with that name already exists')
