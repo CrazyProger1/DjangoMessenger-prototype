@@ -210,3 +210,15 @@ class User:
 
             case 400:
                 raise AlreadyExistsError('Chat with that name already exists')
+
+    def add_chat_member(self, chat_id: int, username: str = None, user_id: int = None):
+        response = self.api_helper.post(
+            {
+                'user': user_id
+
+            },
+            f'chats/{chat_id}/members',
+            self._access_token
+        )
+
+        print(response.status_code, response.content)
