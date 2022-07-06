@@ -23,13 +23,9 @@ class BotListCreateAPIView(generics.ListCreateAPIView):
     serializer_class = CommonBotSerializer
     permission_classes = (permissions.IsAuthenticated,)
 
-    def create(self, request, *args, **kwargs):
-        serializer = self.serializer_class(data=request.data)
+    def perform_create(self, serializer):
+        serializer.save(creator=self.request.user, token=generate_key(settings.BOT_TOKEN_LENGTH))
 
-        if serializer.is_valid():
-            serializer.save(creator=request.user, token=generate_key(settings.BOT_TOKEN_LENGTH))
-
-        return response.Response(serializer.data)
 
 
 class BotRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):

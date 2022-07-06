@@ -20,6 +20,7 @@ import server.yasg_urls as yasg
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/v1/users/', include('users.urls')),
-    path('api/v1/bots/', include('bots.urls'))
+    path('api/v1/bots/', include('bots.urls')),
+    path('api/v1/chats/', include('chats.urls'))
 ]
 urlpatterns += yasg.urlpatterns
