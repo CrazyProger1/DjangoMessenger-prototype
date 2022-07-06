@@ -9,3 +9,9 @@ class ChatSerializer(serializers.ModelSerializer):
         extra_kwargs = {
             'creator': {'read_only': True}
         }
+
+
+class ChatMemberSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ChatMember
+        fields = ('id', 'user', 'bot', 'chat')

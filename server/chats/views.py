@@ -13,4 +13,5 @@ class ChatViewSet(viewsets.ModelViewSet):
     permission_classes = (IsOwnerOrReadOnly, permissions.IsAuthenticated)
 
     def perform_create(self, serializer):
-        serializer.save(creator=self.request.user)
+        chat = serializer.save(creator=self.request.user)
+        ChatMember(user=self.request.user, chat=chat).save()
