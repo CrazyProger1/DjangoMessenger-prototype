@@ -24,10 +24,10 @@ class ChatMemberViewSet(viewsets.ModelViewSet):
     permission_classes = (permissions.IsAuthenticated, IsChatOwnerOrChatIsPublicOrReadOnly, IsChatFitOrReadOnly)
 
     def get_queryset(self):
-        chat_id = self.kwargs['pk']
+        chat_id = self.kwargs['chat_pk']
         members = get_chat_members_by_chat_id(chat_id)
         return members
 
     def perform_create(self, serializer):
-        chat: Chat = get_chat_by_id(self.kwargs.get('pk'))
+        chat: Chat = get_chat_by_id(self.kwargs.get('chat_pk'))
         serializer.save(chat=chat)

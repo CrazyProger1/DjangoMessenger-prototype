@@ -10,5 +10,6 @@ router.register('', ChatViewSet)
 urlpatterns = router.urls
 
 urlpatterns += [
-    path('<int:pk>/members/', ChatMemberViewSet.as_view({'get': 'list', 'post': 'create'}))
+    path('<int:chat_pk>/members/', ChatMemberViewSet.as_view({'get': 'list', 'post': 'create'})),
+    path('<int:chat_pk>/members/<int:pk>', ChatMemberViewSet.as_view({'get': 'retrieve', 'delete': 'destroy'}))
 ]

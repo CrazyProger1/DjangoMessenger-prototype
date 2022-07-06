@@ -13,7 +13,7 @@ class IsOwnerOrReadOnly(permissions.BasePermission):
 class IsChatOwnerOrChatIsPublicOrReadOnly(permissions.BasePermission):
     def has_permission(self, request, view):
         try:
-            chat: Chat = get_chat_by_id(view.kwargs.get('pk'))
+            chat: Chat = get_chat_by_id(view.kwargs.get('chat_pk'))
         except models.ObjectDoesNotExist:
             return False
 
@@ -33,7 +33,7 @@ class IsChatFitOrReadOnly(permissions.BasePermission):
             return True
 
         try:
-            chat: Chat = get_chat_by_id(view.kwargs.get('pk'))
+            chat: Chat = get_chat_by_id(view.kwargs.get('chat_pk'))
         except models.ObjectDoesNotExist:
             return False
 
