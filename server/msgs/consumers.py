@@ -33,7 +33,7 @@ class ChatConsumer(websocket.WebsocketConsumer):
 
         try:
             self.chat = get_chat_by_id(self.chat_id)
-            self.chat_member = find_chat_members(chat=self.chat.pk, user=self.user.pk).first()
+            self.chat_member = find_chat_members(chat=self.chat_id, user=self.user.pk).first()
 
             if self.chat_member is None:
                 raise models.ObjectDoesNotExist('Chat member matching query does not exists')
@@ -67,7 +67,7 @@ class ChatConsumer(websocket.WebsocketConsumer):
             print('not valid!')
             return
 
-        serializer.save(sending_datetime=timezone.now(), sender=self.user)
+        serializer.save(sending_datetime=timezone.now(), sender=self.chat_member, chat=self.chat)
 
         async_to_sync(self.channel_layer.group_send)(
             self.chat_group_name,

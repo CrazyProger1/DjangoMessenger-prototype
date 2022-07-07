@@ -115,7 +115,7 @@ class User:
                 return True
 
             case 401:
-                raise WrongCredentials('Password is wrong')
+                raise WrongCredentialsProvidedError('Password is wrong')
 
     def register(self):
         response = self.api_helper.post(
@@ -127,25 +127,8 @@ class User:
             'users'
         )
 
-        match response.status_code:
-            case 201:
-                return True
-
-            case 400:
-                raise AlreadyExistsError('User with that username already exists')
-
-    def authorize(self):
-        if self._access_token and self._refresh_token:
-            if self._refresh_access():
-                self._grab_user_info()
-                return True
-
-        try:
-            self.register()
-        except AlreadyExistsError:
-            pass
-
-        return self.login()
+        if response.status_code == 201:
+            return self.login()
 
     def change_names(self, first_name: str, last_name: str):
         response = self.api_helper.put(
@@ -164,6 +147,8 @@ class User:
             case 401:
                 self._refresh_access()
                 return self.change_names(first_name, last_name)
+
+
 
     def change_username(self, username: str):
         pass
@@ -185,7 +170,7 @@ class User:
                 return bot
 
             case 400:
-                raise AlreadyExistsError('Bot with this bot name already exists')
+                raise WrongDataProvidedError('Bot with this bot name already exists')
 
             case 401:
                 self._refresh_access()
@@ -209,7 +194,7 @@ class User:
                 return chat_id
 
             case 400:
-                raise AlreadyExistsError('Chat with that name already exists')
+                raise WrongDataProvidedError('Chat with that name already exists')
 
     def add_chat_member(self, chat_id: int, username: str = None, user_id: int = None):
         response = self.api_helper.post(
@@ -225,7 +210,7 @@ class User:
             case 201:
                 return True
             case 400:
-                raise AlreadyExistsError('Member already in chat')
+                raise WrongDataProvidedError('Member already in chat')
 
     @property
     def access_token(self):

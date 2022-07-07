@@ -1,5 +1,6 @@
 import requests
 from .config import *
+from .exceptions import *
 
 _instances = {}
 
@@ -37,11 +38,21 @@ class APIHelper:
         return headers
 
     def post(self, json: dict, obj: str = 'users', access_token: str = None) -> requests.Response:
-        return requests.post(
+        response = requests.post(
             url=self._form_url(obj),
             json=json,
             headers=self._form_headers(access_token)
         )
+        match response.status_code:
+            case 200:
+                return response
+            case 201:
+                return response
+            case 400:
+                errors = response.json()
+                error_key = tuple(errors.keys())[0]
+                raise WrongDataProvidedError(error_key.lower() + ': ' + errors[error_key][0].lower())
+        return response
 
     def put(self,
             json: dict,

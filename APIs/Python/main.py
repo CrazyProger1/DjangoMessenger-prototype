@@ -6,9 +6,9 @@ import rel
 import json
 import threading
 
-user = api.User('crazy7', 'StrongPassword', save_tokens=False)
+user = api.User('crazy0', 'StrongPassword', save_tokens=False, email_address='crazy@crazy.com')
 # user = api.User('admin', 'admin', save_tokens=False)
-user.authorize()
+user.login()
 
 # user.add_chat_member(20, user_id=1)
 
@@ -52,7 +52,7 @@ def on_open(ws: websocket.WebSocketApp):
 
 def main():
     websocket.enableTrace(False)
-    ws = websocket.WebSocketApp("ws://127.0.0.1:8000/ws/chat/20/",
+    ws = websocket.WebSocketApp("ws://127.0.0.1:8000/ws/chat/1/",
                                 on_open=on_open,
                                 on_message=on_message,
                                 on_error=on_error,

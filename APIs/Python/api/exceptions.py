@@ -2,11 +2,11 @@ class SessionLoadError(Exception):
     pass
 
 
-class AlreadyExistsError(Exception):
+class WrongDataProvidedError(Exception):
     pass
 
 
-class WrongCredentials(Exception):
+class WrongCredentialsProvidedError(Exception):
     pass
 
 
