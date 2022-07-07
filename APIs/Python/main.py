@@ -45,15 +45,16 @@ def connect_to_chat(chat_id: int):
                                 on_open=on_open,
                                 on_message=on_message,
                                 on_error=on_error,
-                                on_close=on_close, header={'Authorization': f'Bearer {user.access_token}'},
-                                )
+                                on_close=on_close,
+                                header={'Authorization': f'Bearer {user.access_token}'})
 
     ws.run_forever(dispatcher=rel)
 
 
 def main():
-    threading.Thread(target=connect_to_chat, args=[1]).start()
-    threading.Thread(target=connect_to_chat, args=[2]).start()
+    connect_to_chat(1)
+    connect_to_chat(2)
+
     rel.signal(2, rel.abort)
     rel.dispatch()
 
