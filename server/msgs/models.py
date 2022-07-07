@@ -9,8 +9,8 @@ class Message(models.Model):
     sender = models.ForeignKey(ChatMember, models.CASCADE, verbose_name='message sender')
     type = models.CharField(verbose_name='message type', max_length=10)
     text = models.BinaryField(verbose_name='message text')
-    files_password = models.BinaryField(verbose_name='files password')
-    encryption_type = models.CharField(verbose_name='message encryption', max_length=10, default='RSA')
+    files_password = models.BinaryField(verbose_name='files password', null=True)
+    encryption_type = models.CharField(verbose_name='message encryption', max_length=10, default='RSA', null=True)
     sending_datetime = models.DateTimeField(verbose_name='sending date and time')
 
     class Meta:

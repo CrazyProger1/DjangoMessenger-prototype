@@ -33,8 +33,21 @@ def on_close(ws, close_status_code, close_msg):
     exit(0)
 
 
+def send_message(ws: websocket.WebSocketApp,
+                 message_type: str,
+                 text: str,
+                 files_password: str):
+    ws.send(json.dumps({
+        'type': message_type,
+        'text': text,
+        'files_password': files_password,
+        'encryption_type': None,
+        'initial': False
+    }))
+
+
 def on_open(ws: websocket.WebSocketApp):
-    ws.send('hello')
+    send_message(ws, 'text', 'hello world!', 'none')
 
 
 def main():
