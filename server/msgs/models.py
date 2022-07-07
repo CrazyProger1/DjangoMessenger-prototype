@@ -11,6 +11,7 @@ class Message(models.Model):
     text = models.BinaryField(verbose_name='message text')
     files_password = models.BinaryField(verbose_name='files password')
     encryption_type = models.CharField(verbose_name='message encryption', max_length=10, default='RSA')
+    sending_datetime = models.DateTimeField(verbose_name='sending date and time')
 
     class Meta:
         verbose_name = 'Message'
