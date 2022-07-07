@@ -60,11 +60,11 @@ class ChatConsumer(websocket.WebsocketConsumer):
             )
 
     def receive(self, text_data=None, bytes_data=None):
-        message = json.loads(text_data)
-        print(message)
-        serializer = MessageSerializer(data=message)
+        json_message = json.loads(text_data)
+
+        serializer = MessageSerializer(data=json_message)
         if not serializer.is_valid():
-            print('not valid!')
+            print('NOT VALID!')  # add handler
             return
 
         serializer.save(sending_datetime=timezone.now(), sender=self.chat_member, chat=self.chat)
@@ -73,8 +73,17 @@ class ChatConsumer(websocket.WebsocketConsumer):
             self.chat_group_name,
             {
                 'type': 'chat_message',
-                'message': message
+                'message': serializer.data
             }
+        )
+
+    def chat_message(self, event):
+        message = event.get('message')
+        self.send(
+            text_data=json.dumps({
+                'event': 'send',
+                'message': message
+            })
         )
 
 # active_users = {}
