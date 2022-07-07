@@ -226,3 +226,7 @@ class User:
                 return True
             case 400:
                 raise AlreadyExistsError('Member already in chat')
+
+    @property
+    def access_token(self):
+        return self._access_token
