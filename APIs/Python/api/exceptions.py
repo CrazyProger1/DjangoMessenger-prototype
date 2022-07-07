@@ -2,13 +2,18 @@ class SessionLoadError(Exception):
     pass
 
 
-class WrongDataProvidedError(Exception):
+class BaseAPIError(Exception):
+    def __init__(self, error_key, error_text):
+        super(BaseAPIError, self).__init__(error_key + ': ' + error_text)
+
+
+class WrongDataProvidedError(BaseAPIError):
     pass
 
 
-class WrongCredentialsProvidedError(Exception):
+class WrongCredentialsProvidedError(BaseAPIError):
     pass
 
 
-class RefreshExpiredError(Exception):
+class RefreshExpiredError(BaseAPIError):
     pass

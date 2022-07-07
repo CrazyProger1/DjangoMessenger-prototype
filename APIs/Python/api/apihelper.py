@@ -18,6 +18,8 @@ def singleton(cls):
 
 @singleton
 class APIHelper:
+    SUCCESS_CODES = (200, 201)
+
     def __init__(self):
         self.host = HOST
 
@@ -37,22 +39,31 @@ class APIHelper:
         }
         return headers
 
-    def post(self, json: dict, obj: str = 'users', access_token: str = None) -> requests.Response:
+    def _handle_errors(self, response, **exception_classes) -> requests.Response:
+        if response.status_code not in self.SUCCESS_CODES:
+            errors = response.json()
+            error_key = tuple(errors.keys())[0]
+
+            exception = exception_classes.get(f'error{response.status_code}')
+            if not exception:
+                return response
+
+            error_text = errors[error_key]
+            if isinstance(error_text, list) or isinstance(error_text, tuple):
+                error_text = error_text[0]
+
+            raise exception(error_key, error_text)
+
+        return response
+
+    def post(self, json: dict, obj: str = 'users', access_token: str = None, **exception_classes) -> requests.Response:
         response = requests.post(
             url=self._form_url(obj),
             json=json,
             headers=self._form_headers(access_token)
         )
-        match response.status_code:
-            case 200:
-                return response
-            case 201:
-                return response
-            case 400:
-                errors = response.json()
-                error_key = tuple(errors.keys())[0]
-                raise WrongDataProvidedError(error_key.lower() + ': ' + errors[error_key][0].lower())
-        return response
+
+        return self._handle_errors(response, **exception_classes)
 
     def put(self,
             json: dict,

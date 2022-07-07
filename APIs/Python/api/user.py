@@ -66,18 +66,14 @@ class User:
             {
                 'refresh': self._refresh_token
             },
-            'users/token/refresh'
+            'users/token/refresh',
+            error401=RefreshExpiredError
         )
+        data: dict = response.json()
 
-        match response.status_code:
-            case 200:
-                data: dict = response.json()
-
-                self._access_token = data.get('access')
-                self._save_tokens()
-                return True
-            case 401:
-                raise RefreshExpiredError('Refresh token is expired')
+        self._access_token = data.get('access')
+        self._save_tokens()
+        return True
 
     def _grab_user_info(self):
         response = self.api_helper.get(
@@ -85,15 +81,13 @@ class User:
             self._access_token
         )
 
-        match response.status_code:
-            case 200:
-                data: dict = response.json()
-                self.username = data.get('username')
-                self.id = data.get('id')
-                self.email = data.get('email')
-                self.first_name = data.get('first_name')
-                self.last_name = data.get('last_name')
-                return True
+        data: dict = response.json()
+        self.username = data.get('username')
+        self.id = data.get('id')
+        self.email = data.get('email')
+        self.first_name = data.get('first_name')
+        self.last_name = data.get('last_name')
+        return True
 
     def login(self):
         response = self.api_helper.post(
@@ -101,21 +95,17 @@ class User:
                 'username': self.username,
                 'password': self.password
             },
-            'users/token'
+            'users/token',
+            error401=WrongCredentialsProvidedError
         )
 
-        match response.status_code:
-            case 200:
-                data: dict = response.json()
+        data: dict = response.json()
 
-                self._access_token = data.get('access')
-                self._refresh_token = data.get('refresh')
-                self._save_tokens()
-                self._grab_user_info()
-                return True
-
-            case 401:
-                raise WrongCredentialsProvidedError('Password is wrong')
+        self._access_token = data.get('access')
+        self._refresh_token = data.get('refresh')
+        self._save_tokens()
+        self._grab_user_info()
+        return True
 
     def register(self):
         response = self.api_helper.post(
@@ -148,8 +138,6 @@ class User:
                 self._refresh_access()
                 return self.change_names(first_name, last_name)
 
-
-
     def change_username(self, username: str):
         pass
 
@@ -159,7 +147,8 @@ class User:
                 'name': name
             },
             'bots',
-            self._access_token
+            self._access_token,
+            error400=WrongDataProvidedError
         )
 
         match response.status_code:
@@ -168,9 +157,6 @@ class User:
 
                 bot = Bot(**data)
                 return bot
-
-            case 400:
-                raise WrongDataProvidedError('Bot with this bot name already exists')
 
             case 401:
                 self._refresh_access()
@@ -184,7 +170,8 @@ class User:
                 'private': private
             },
             'chats',
-            self._access_token
+            self._access_token,
+            error400=WrongDataProvidedError
         )
         match response.status_code:
             case 201:
@@ -193,9 +180,6 @@ class User:
                 chat_id = data.get('id')
                 return chat_id
 
-            case 400:
-                raise WrongDataProvidedError('Chat with that name already exists')
-
     def add_chat_member(self, chat_id: int, username: str = None, user_id: int = None):
         response = self.api_helper.post(
             {
@@ -203,14 +187,13 @@ class User:
 
             },
             f'chats/{chat_id}/members',
-            self._access_token
+            self._access_token,
+            error400=WrongDataProvidedError
         )
 
         match response.status_code:
             case 201:
                 return True
-            case 400:
-                raise WrongDataProvidedError('Member already in chat')
 
     @property
     def access_token(self):
