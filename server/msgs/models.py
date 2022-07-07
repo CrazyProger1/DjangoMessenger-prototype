@@ -17,4 +17,4 @@ class Message(models.Model):
         verbose_name_plural = 'Messages'
 
     def __str__(self):
-        return f'Message<>'
+        return f'Message<chat={self.chat.pk}>'
