@@ -25,8 +25,7 @@ class User:
         self.session_filepath = session_filepath
         self.save_tokens = save_tokens
         self.host = host
-        self.message_handlers = {}
-        self.connections = {}
+
         self.id: int | None = None
         self.first_name: str | None = None
         self.last_name: str | None = None
@@ -34,7 +33,10 @@ class User:
         self._access_token: str | None = None
         self._refresh_token: str | None = None
 
-        self.api_helper: APIHelper = APIHelper()
+        self._message_handlers = {}
+        self._connections = {}
+
+        self._api_helper: APIHelper = APIHelper()
 
         self._load_tokens()
 
@@ -66,7 +68,7 @@ class User:
             )
 
     def _refresh_access(self):
-        response = self.api_helper.post(
+        response = self._api_helper.post(
             {
                 'refresh': self._refresh_token
             },
@@ -80,7 +82,7 @@ class User:
         return True
 
     def _grab_user_info(self):
-        response = self.api_helper.get(
+        response = self._api_helper.get(
             'users/me',
             self._access_token
         )
@@ -94,7 +96,7 @@ class User:
         return True
 
     def login(self):
-        response = self.api_helper.post(
+        response = self._api_helper.post(
             {
                 'username': self.username,
                 'password': self.password
@@ -112,7 +114,7 @@ class User:
         return True
 
     def register(self):
-        response = self.api_helper.post(
+        response = self._api_helper.post(
             {
                 'username': self.username,
                 'password': self.password,
@@ -125,7 +127,7 @@ class User:
             return self.login()
 
     def change_names(self, first_name: str, last_name: str):
-        response = self.api_helper.put(
+        response = self._api_helper.put(
             {
                 'first_name': first_name,
                 'last_name': last_name
@@ -146,7 +148,7 @@ class User:
         pass
 
     def create_bot(self, name: str) -> Bot:
-        response = self.api_helper.post(
+        response = self._api_helper.post(
             {
                 'name': name
             },
@@ -167,7 +169,7 @@ class User:
                 return self.create_bot(name)
 
     def create_chat(self, name: str, group: bool = False, private: bool = False) -> int:
-        response = self.api_helper.post(
+        response = self._api_helper.post(
             {
                 'name': name,
                 'group': group,
@@ -185,7 +187,7 @@ class User:
                 return chat_id
 
     def add_chat_member(self, chat_id: int, username: str = None, user_id: int = None):
-        response = self.api_helper.post(
+        response = self._api_helper.post(
             {
                 'user': user_id
 
@@ -200,13 +202,13 @@ class User:
 
     def message_handler(self, **options):
         def decorator(func):
-            self.message_handlers.update({func: options})
+            self._message_handlers.update({func: options})
             return func
 
         return decorator
 
     def get_chat_ids(self) -> Iterable[int]:
-        response = self.api_helper.get(
+        response = self._api_helper.get(
             'chats/members/my',
             self._access_token
         )
@@ -225,18 +227,30 @@ class User:
             message_data = string_data.get('message')
             sender_data = string_data.get('sender')
 
-        for handler, options in self.message_handlers.items():
+        for handler, options in self._message_handlers.items():
             if options.get('ignore_my'):
                 if self.id == sender_data.get('id'):
                     continue
 
             handler(Message(**message_data, sender=Sender(**sender_data)))
+            self._save_last_read_message(message_data.get('id'))
+
+    def _save_last_read_message(self, message_id: int):  # test variant
+        with open('lrm', 'w') as f:
+            f.write(str(message_id))
+
+    def _load_last_read_message(self):  # test variant
+        try:
+            with open('lrm', 'r') as f:
+                return int(f.read())
+        except FileNotFoundError:
+            self._save_last_read_message(0)
 
     def get_unread_messages(self, chat_id: int):
-        response = self.api_helper.get(
+        response = self._api_helper.get(
             f'chats/{chat_id}/messages',
             self._access_token,
-            last_read=0
+            last_read=self._load_last_read_message()
         )
 
         if response.status_code == 200:
@@ -246,8 +260,8 @@ class User:
 
     def run_polling(self, load_unread_messages: bool = True):
         for chat_id in self.get_chat_ids():
-            connection = self.api_helper.connect_to_chat(chat_id, self._access_token)
-            self.connections.update({chat_id: connection})
+            connection = self._api_helper.connect_to_chat(chat_id, self._access_token)
+            self._connections.update({chat_id: connection})
             connection.on_message = self._handle_message
             if load_unread_messages:
                 self.get_unread_messages(chat_id)
@@ -266,11 +280,11 @@ class User:
                       initial_message: bool = False
                       ):
 
-        connection: websocket.WebSocketApp = self.connections.get(chat_id)
+        connection: websocket.WebSocketApp = self._connections.get(chat_id)
 
         if not connection:
-            connection = self.api_helper.connect_to_chat(chat_id, self.access_token)
-            self.connections.update({chat_id: connection})
+            connection = self._api_helper.connect_to_chat(chat_id, self.access_token)
+            self._connections.update({chat_id: connection})
 
         if not attach_files:
             message_string = json.dumps({

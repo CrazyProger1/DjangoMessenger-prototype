@@ -1,4 +1,3 @@
-
 import traceback
 from urllib.parse import parse_qs
 
@@ -32,16 +31,19 @@ class JWTAuthMiddleware:
                 scope['user'] = AnonymousUser()
         except (InvalidSignatureError, KeyError, ExpiredSignatureError, DecodeError):
             traceback.print_exc()
-        except:
+        except Exception as e:
+            print(e)
             scope['user'] = AnonymousUser()
         return await self.app(scope, receive, send)
 
-    def get_payload(self, jwt_token):
+    @staticmethod
+    def get_payload(jwt_token):
         payload = jwt_decode(
             jwt_token, settings.SECRET_KEY, algorithms=["HS256"])
         return payload
 
-    def get_user_credentials(self, payload):
+    @staticmethod
+    def get_user_credentials(payload):
         """
         method to get user credentials from jwt token payload.
         defaults to user id.
