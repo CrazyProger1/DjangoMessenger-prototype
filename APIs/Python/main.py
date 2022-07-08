@@ -11,13 +11,13 @@ user = api.User('crazy0', 'StrongPassword', save_tokens=False, email_address='cr
 user.login()
 
 
-@user.message_handler()
+@user.message_handler(ignore_my=True)
 def handle_message(message: Message):
-    print(message.text)
-    print(message.chat_id)
-    print(message.id)
-    print(message.sending_datetime)
-    print(message.type)
+    user.send_message(message.chat_id, message.text + '<<')
+    print(message.sender.name + f': {message.id}: ' + message.text)
+
+    # if message.sender_id != user.id:
+    #     user.send_message(message.chat_id, message.text)
 
 
 def main():

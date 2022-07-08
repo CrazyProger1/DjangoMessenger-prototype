@@ -220,33 +220,65 @@ class User:
         if connection:
             data: dict = json.loads(string_data)
             message_data = data.get('message')
+            sender_data = data.get('sender')
         else:
-            message_data = string_data
+            message_data = string_data.get('message')
+            sender_data = string_data.get('sender')
 
         for handler, options in self.message_handlers.items():
-            handler(Message(**message_data))
+            if options.get('ignore_my'):
+                if self.id == sender_data.get('id'):
+                    continue
+
+            handler(Message(**message_data, sender=Sender(**sender_data)))
 
     def get_unread_messages(self, chat_id: int):
         response = self.api_helper.get(
             f'chats/{chat_id}/messages',
             self._access_token,
-            last_read=10
+            last_read=186
         )
 
         if response.status_code == 200:
-            messages = response.json().get('results')
-            for message in messages:
-                self._handle_message(None, message)
+            messages_data = response.json().get('results')
+            for message_data in messages_data:
+                self._handle_message(None, message_data)
 
     def run_polling(self):
         for chat_id in self.get_chat_ids():
             connection = self.api_helper.connect_to_chat(chat_id, self._access_token)
-            self.get_unread_messages(chat_id)
             self.connections.update({chat_id: connection})
             connection.on_message = self._handle_message
+            self.get_unread_messages(chat_id)
 
         rel.signal(2, rel.abort)
         rel.dispatch()
+
+    def _send_message(self,
+                      chat_id: int,
+                      text: str,
+                      attach_files: bool = False,
+                      files: Iterable[str] = (),
+                      files_password: str = None,
+                      is_reply: bool = False,
+                      reply_on: int = None,
+                      initial_message: bool = False
+                      ):
+        connection: websocket.WebSocketApp = self.connections.get(chat_id)
+        if not attach_files:
+            message_string = json.dumps({
+                'type': 'text',
+                'text': text,
+                'files_password': files_password,
+                'encryption_type': 'RSA',
+                'initial': initial_message,
+                'is_reply': is_reply,
+                'reply_on': reply_on
+            })
+            connection.send(message_string)
+
+    def send_message(self, chat_id: int, text: str):
+        self._send_message(chat_id, text)
 
     @property
     def access_token(self):
