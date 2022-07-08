@@ -217,8 +217,11 @@ class User:
                 yield result.get('chat')
 
     def _handle_message(self, connection, string_data):
-        data: dict = json.loads(string_data)
-        message_data = data.get('message')
+        if connection:
+            data: dict = json.loads(string_data)
+            message_data = data.get('message')
+        else:
+            message_data = string_data
 
         for handler, options in self.message_handlers.items():
             handler(Message(**message_data))
@@ -230,7 +233,10 @@ class User:
             last_read=10
         )
 
-        print(response.text)
+        if response.status_code == 200:
+            messages = response.json().get('results')
+            for message in messages:
+                self._handle_message(None, message)
 
     def run_polling(self):
         for chat_id in self.get_chat_ids():
