@@ -96,10 +96,11 @@ class APIHelper:
             headers=self._form_headers(access_token)
         )
 
-    def get(self, obj: str = 'users', access_token: str = None):
+    def get(self, obj: str = 'users', access_token: str = None, **params):
         return requests.get(
             url=self._form_url(obj),
-            headers=self._form_headers(access_token)
+            headers=self._form_headers(access_token),
+            params=params
         )
 
     def connect_to_chat(self, chat_id: int, access_token: str = None):

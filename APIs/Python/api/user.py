@@ -223,9 +223,19 @@ class User:
         for handler, options in self.message_handlers.items():
             handler(Message(**message_data))
 
+    def get_unread_messages(self, chat_id: int):
+        response = self.api_helper.get(
+            f'chats/{chat_id}/messages',
+            self._access_token,
+            last_read=10
+        )
+
+        print(response.text)
+
     def run_polling(self):
         for chat_id in self.get_chat_ids():
             connection = self.api_helper.connect_to_chat(chat_id, self._access_token)
+            self.get_unread_messages(chat_id)
             self.connections.update({chat_id: connection})
             connection.on_message = self._handle_message
 
