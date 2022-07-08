@@ -236,7 +236,7 @@ class User:
         response = self.api_helper.get(
             f'chats/{chat_id}/messages',
             self._access_token,
-            last_read=186
+            last_read=0
         )
 
         if response.status_code == 200:
@@ -244,12 +244,13 @@ class User:
             for message_data in messages_data:
                 self._handle_message(None, message_data)
 
-    def run_polling(self):
+    def run_polling(self, load_unread_messages: bool = True):
         for chat_id in self.get_chat_ids():
             connection = self.api_helper.connect_to_chat(chat_id, self._access_token)
             self.connections.update({chat_id: connection})
             connection.on_message = self._handle_message
-            self.get_unread_messages(chat_id)
+            if load_unread_messages:
+                self.get_unread_messages(chat_id)
 
         rel.signal(2, rel.abort)
         rel.dispatch()
@@ -264,7 +265,13 @@ class User:
                       reply_on: int = None,
                       initial_message: bool = False
                       ):
+
         connection: websocket.WebSocketApp = self.connections.get(chat_id)
+
+        if not connection:
+            connection = self.api_helper.connect_to_chat(chat_id, self.access_token)
+            self.connections.update({chat_id: connection})
+
         if not attach_files:
             message_string = json.dumps({
                 'type': 'text',

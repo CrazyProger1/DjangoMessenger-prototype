@@ -70,16 +70,7 @@ class ChatConsumer(websocket.WebsocketConsumer):
             self.chat_group_name,
             {
                 'type': 'chat_message',
-                'message': serializer.data
-            }
-        )
-
-    def chat_message(self, event):
-        message = event.get('message')
-        self.send(
-            text_data=json.dumps({
-                'event': 'send',
-                'message': message,
+                'message': serializer.data,
                 'sender': {
                     'id': self.user.pk,
                     'type': 'user',
@@ -87,5 +78,17 @@ class ChatConsumer(websocket.WebsocketConsumer):
                     'first_name': self.user.first_name,
                     'last_name': self.user.last_name,
                 }
+            }
+        )
+
+    def chat_message(self, event):
+        message_data = event.get('message')
+        sender_data = event.get('sender')
+
+        self.send(
+            text_data=json.dumps({
+                'event': 'send',
+                'message': message_data,
+                'sender': sender_data
             })
         )

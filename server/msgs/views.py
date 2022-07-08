@@ -45,7 +45,7 @@ class MessageListAPIView(generics.ListAPIView):
                 }
 
             data.append({
-                'event': None,
+                'event': 'send',
                 'message': message,
                 'sender': sender_data
             })
