@@ -8,6 +8,26 @@ from .serializers import *
 from .permissions import *
 
 
+class MyChatMembersListAPIView(generics.ListAPIView):
+    queryset = get_all_chat_members()
+    serializer_class = ChatMemberSerializer
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def get_my_chats_queryset(self):
+        return find_chat_members(user=self.request.user)
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_my_chats_queryset())
+
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return response.Response(serializer.data)
+
+
 class ChatViewSet(viewsets.ModelViewSet):
     queryset = get_all_chats()
     serializer_class = ChatSerializer
