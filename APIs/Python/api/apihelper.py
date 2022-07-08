@@ -1,4 +1,7 @@
 import requests
+import websocket
+import rel
+
 from .config import *
 from .exceptions import *
 
@@ -22,9 +25,19 @@ class APIHelper:
 
     def __init__(self):
         self.host = HOST
+        self._adjust_websocket_host()
+
+    def _adjust_websocket_host(self):
+        if 'https' in self.host:
+            self.websocket_host = self.host.replace('https', 'ws')
+        elif 'http' in self.host:
+            self.websocket_host = self.host.replace('http', 'ws')
+        else:
+            raise InvalidHostError('The host must look like http://... or https://...')
 
     def set_host(self, host: str):
         self.host = host
+        self._adjust_websocket_host()
 
     def _form_url(self, obj: str):
         return self.host + 'api/' + API_VERSION + '/' + obj + '/'
@@ -88,3 +101,11 @@ class APIHelper:
             url=self._form_url(obj),
             headers=self._form_headers(access_token)
         )
+
+    def connect_to_chat(self, chat_id: int, access_token: str = None):
+        websocket.enableTrace(False)
+        ws = websocket.WebSocketApp(f"{self.websocket_host}ws/chat/{chat_id}/",
+                                    header=self._form_headers(access_token))
+
+        ws.run_forever(dispatcher=rel)
+        return ws

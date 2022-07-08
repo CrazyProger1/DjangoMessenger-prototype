@@ -1,11 +1,13 @@
 import json
 import os
 import requests
+from typing import Iterable
 
 from .exceptions import *
 from .config import *
 from .apihelper import *
 from .bot import *
+from .message import *
 
 
 class User:
@@ -23,6 +25,8 @@ class User:
         self.session_filepath = session_filepath
         self.save_tokens = save_tokens
         self.host = host
+        self.message_handlers = {}
+        self.connections = {}
         self.id: int | None = None
         self.first_name: str | None = None
         self.last_name: str | None = None
@@ -191,9 +195,42 @@ class User:
             error400=WrongDataProvidedError
         )
 
-        match response.status_code:
-            case 201:
-                return True
+        if response.status_code == 201:
+            return True
+
+    def message_handler(self, **options):
+        def decorator(func):
+            self.message_handlers.update({func: options})
+            return func
+
+        return decorator
+
+    def get_chat_ids(self) -> Iterable[int]:
+        response = self.api_helper.get(
+            'chats/members/my',
+            self._access_token
+        )
+        results = response.json().get('results')
+
+        if response.status_code == 200:
+            for result in results:
+                yield result.get('chat')
+
+    def _handle_message(self, connection, string_data):
+        data: dict = json.loads(string_data)
+        message_data = data.get('message')
+
+        for handler, options in self.message_handlers.items():
+            handler(Message(**message_data))
+
+    def run_polling(self):
+        for chat_id in self.get_chat_ids():
+            connection = self.api_helper.connect_to_chat(chat_id, self._access_token)
+            self.connections.update({chat_id: connection})
+            connection.on_message = self._handle_message
+
+        rel.signal(2, rel.abort)
+        rel.dispatch()
 
     @property
     def access_token(self):
