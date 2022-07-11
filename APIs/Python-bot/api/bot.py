@@ -11,3 +11,6 @@ class Bot:
         self.creator_id: int | None = None
 
         self._api_helper: APIHelper = APIHelper(self.host)
+
+    # def authorize(self):
+    #     self._api_helper.get()

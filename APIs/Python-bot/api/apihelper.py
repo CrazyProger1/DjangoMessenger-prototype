@@ -48,7 +48,7 @@ class APIHelper:
             return None
 
         headers = {
-            'BotAuthorization': TOKEN_KEYWORD + ' ' + access_token
+            'BotAuthorization': access_token
         }
         return headers
 

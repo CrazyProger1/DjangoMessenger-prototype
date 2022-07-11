@@ -6,13 +6,12 @@ from django.http import HttpResponse
 from django.shortcuts import render
 from django.conf import settings
 
-from rest_framework import viewsets, status, response, permissions, generics
+from rest_framework import viewsets, status, response, permissions, generics, mixins
 
 from .models import *
 from .serializers import *
 from .services import *
 from .permissions import *
-from .extractors import *
 
 
 def generate_key(length: int) -> str:
@@ -39,7 +38,7 @@ class BotRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = (IsAuthenticatedOrBot, IsOwnerOrReadOnly)
 
     def retrieve(self, request, *args, **kwargs):
-        bot = extract_bot(request)
+        bot = kwargs.get('bot')
         instance: Bot = self.get_object()
         if instance.creator == request.user or (bot and bot.pk == kwargs.get('pk')):
             serializer = PrivateBotSerializer(instance)
@@ -47,3 +46,18 @@ class BotRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
         else:
             serializer = CommonBotSerializer(instance)
             return response.Response(serializer.data)
+
+
+class BotRetrieveAPIView(
+    generics.RetrieveAPIView
+):
+    queryset = get_all_bots()
+    serializer_class = PrivateBotSerializer
+    permission_classes = (IsBot,)
+
+    def get_object(self):
+        obj = self.kwargs.get('bot')
+        if obj:
+            return obj
+        return super(BotRetrieveAPIView, self).get_object()
+

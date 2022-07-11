@@ -13,21 +13,7 @@ class UserViewSet(viewsets.ModelViewSet):
     serializer_class = UserSerializer
     permission_classes = (IsOwnerOrReadOnly, permissions.IsAuthenticated)
 
-    def redefine_get_object(self):
-        self.get_object = lambda: self.request.user
-
-    def retrieve_me(self, request, *args, **kwargs):
-        self.redefine_get_object()
-        return self.retrieve(request, *args, **kwargs)
-
-    def destroy_me(self, request, *args, **kwargs):
-        self.redefine_get_object()
-        return self.destroy(request, *args, **kwargs)
-
-    def update_me(self, request, *args, **kwargs):
-        self.redefine_get_object()
-        return self.update(request, *args, **kwargs)
-
-    def update_partially_me(self, request, *args, **kwargs):
-        self.redefine_get_object()
-        return self.partial_update(request, *args, **kwargs)
+    def get_object(self):
+        if self.kwargs.get('pk') is not None:
+            return super(UserViewSet, self).get_object()
+        return self.request.user

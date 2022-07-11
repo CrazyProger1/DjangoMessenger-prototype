@@ -17,10 +17,10 @@ urlpatterns = [
     )),
 
     path('me/', UserViewSet.as_view({
-        'get': 'retrieve_me',
-        'delete': 'destroy_me',
-        'put': 'update_me',
-        'patch': 'update_partially_me'
+        'get': 'retrieve',
+        'delete': 'destroy',
+        'put': 'update',
+        'patch': 'partial_update'
     })),
 
     # token views

@@ -18,4 +18,18 @@ class IsAuthenticatedOrBot(permissions.BasePermission):
         token = request.headers.get('BotAuthorization', False)
         if token:
             bot = extract_bot(request)
-            return bot is not None
+
+            if bot:
+                view.kwargs.update({'bot': bot})
+                return True
+
+
+class IsBot(permissions.BasePermission):
+    def has_permission(self, request, view):
+        token = request.headers.get('BotAuthorization', False)
+        if token:
+            bot = extract_bot(request)
+
+            if bot:
+                view.kwargs.update({'bot': bot})
+                return True
