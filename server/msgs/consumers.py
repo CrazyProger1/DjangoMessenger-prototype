@@ -27,14 +27,14 @@ class ChatConsumer(websocket.WebsocketConsumer):
         self.chat_member: ChatMember | None = None
 
     def connect(self):
-        self.user = self.scope['user']
+        self.user: User = self.scope['user']
         self.bot = extract_bot_from_scope(self.scope)
         self.chat_id = self.scope['url_route']['kwargs']['chat_id']
 
         try:
             self.chat = get_chat_by_id(self.chat_id)
 
-            if self.user:
+            if self.user.is_authenticated:
                 self.chat_member = find_chat_members(chat=self.chat_id, user=self.user.pk).first()
             elif self.bot:
                 self.chat_member = find_chat_members(chat=self.chat_id, bot=self.bot.pk).first()
@@ -73,7 +73,7 @@ class ChatConsumer(websocket.WebsocketConsumer):
 
         serializer.save(sending_datetime=timezone.now(), sender=self.chat_member, chat=self.chat)
 
-        if self.user:
+        if self.user.is_authenticated:
             sender = {
                 'id': self.user.pk,
                 'type': 'user',

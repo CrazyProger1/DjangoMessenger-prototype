@@ -188,10 +188,11 @@ class User:
                 chat_id = data.get('id')
                 return chat_id
 
-    def add_chat_member(self, chat_id: int, username: str = None, user_id: int = None):
+    def add_chat_member(self, chat_id: int, user_id: int = None, bot_id: int = None):
         response = self._api_helper.post(
             {
-                'user': user_id
+                'user': user_id,
+                'bot': bot_id
 
             },
             f'chats/{chat_id}/members',
