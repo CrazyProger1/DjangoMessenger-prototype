@@ -1,5 +1,31 @@
 from rest_framework import permissions, request as rq
 from .services import *
+from bots.extractors import extract_bot_from_request
+
+
+class IsAuthenticatedOrBot(permissions.BasePermission):
+    def has_permission(self, request, view):
+        if bool(request.user and request.user.is_authenticated):
+            return True
+
+        token = request.headers.get('BotAuthorization', False)
+        if token:
+            bot = extract_bot_from_request(request)
+
+            if bot:
+                view.kwargs.update({'bot': bot})
+                return True
+
+
+class IsChatExists(permissions.BasePermission):
+    def has_permission(self, request, view):
+        try:
+            chat: Chat = get_chat_by_id(view.kwargs.get('chat_pk'))
+
+            if chat:
+                return True
+        except models.ObjectDoesNotExist:
+            return False
 
 
 class IsOwnerOrReadOnly(permissions.BasePermission):
@@ -12,13 +38,10 @@ class IsOwnerOrReadOnly(permissions.BasePermission):
 
 class IsChatOwnerOrChatIsPublicOrReadOnly(permissions.BasePermission):
     def has_permission(self, request, view):
-        try:
-            chat: Chat = get_chat_by_id(view.kwargs.get('chat_pk'))
-        except models.ObjectDoesNotExist:
-            return False
-
         if request.method in permissions.SAFE_METHODS:
             return True
+
+        chat: Chat = get_chat_by_id(view.kwargs.get('chat_pk'))
 
         if not chat.private:
             return True
@@ -48,10 +71,10 @@ class IsChatFitOrReadOnly(permissions.BasePermission):
 
 class IsInChatOrAddSelfOnly(permissions.BasePermission):
     def has_permission(self, request, view):
-        try:
-            chat: Chat = get_chat_by_id(view.kwargs.get('chat_pk'))
-        except models.ObjectDoesNotExist:
-            return False
+        if request.method in permissions.SAFE_METHODS:
+            return True
+
+        chat: Chat = get_chat_by_id(view.kwargs.get('chat_pk'))
 
         user_to_add_pk = request.data.get('user')
         request_user = request.user
