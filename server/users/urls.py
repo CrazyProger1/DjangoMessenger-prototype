@@ -8,7 +8,7 @@ from rest_framework_simplejwt.views import (
 
 urlpatterns = [
     # user views
-    path('<int:pk>', UserViewSet.as_view(
+    path('<int:pk>/', UserViewSet.as_view(
         {
             'get': 'retrieve',
             'put': 'update',

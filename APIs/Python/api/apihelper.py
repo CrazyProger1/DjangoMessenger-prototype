@@ -54,12 +54,13 @@ class APIHelper:
 
     def _handle_errors(self, response, **exception_classes) -> requests.Response:
         if response.status_code not in self.SUCCESS_CODES:
-            errors = response.json()
-            error_key = tuple(errors.keys())[0]
 
             exception = exception_classes.get(f'error{response.status_code}')
             if not exception:
                 return response
+
+            errors = response.json()
+            error_key = tuple(errors.keys())[0]
 
             error_text = errors[error_key]
             if isinstance(error_text, list) or isinstance(error_text, tuple):
@@ -82,25 +83,37 @@ class APIHelper:
             json: dict,
             obj: str = 'users',
             access_token: str = None,
-            partially: bool = False) -> requests.Response:
+            partially: bool = False,
+            **exception_classes
+            ) -> requests.Response:
 
         if not partially:
-            return requests.put(
+            return self._handle_errors(requests.put(
                 url=self._form_url(obj),
                 json=json,
                 headers=self._form_headers(access_token)
-            )
-        return requests.patch(
+            ), **exception_classes)
+        return self._handle_errors(requests.patch(
             url=self._form_url(obj),
             json=json,
             headers=self._form_headers(access_token)
-        )
+        ), **exception_classes)
 
-    def get(self, obj: str = 'users', access_token: str = None, **params):
-        return requests.get(
+    def get(self, obj: str = 'users', access_token: str = None, params: dict = None, **exception_classes):
+        return self._handle_errors(requests.get(
             url=self._form_url(obj),
             headers=self._form_headers(access_token),
             params=params
+        ), **exception_classes)
+
+    def delete(self, obj: str = 'users', access_token: str = None, **exception_classes):
+        return self._handle_errors(
+            requests.delete(
+                url=self._form_url(obj),
+                headers=self._form_headers(access_token),
+
+            ),
+            **exception_classes
         )
 
     def connect_to_chat(self, chat_id: int, access_token: str = None):

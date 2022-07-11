@@ -67,7 +67,7 @@ class User:
                 session_file
             )
 
-    def _refresh_access(self):
+    def refresh_access(self):
         response = self._api_helper.post(
             {
                 'refresh': self._refresh_token
@@ -135,18 +135,31 @@ class User:
             },
             'users/me',
             self._access_token,
-            partially=True
+            partially=True,
+            error401=WrongCredentialsProvidedError
         )
 
         match response.status_code:
             case 200:
+                self.first_name = first_name
+                self.last_name = last_name
                 return True
-            case 401:
-                self._refresh_access()
-                return self.change_names(first_name, last_name)
 
     def change_username(self, username: str):
-        pass
+        response = self._api_helper.put(
+            {
+                'username': username,
+            },
+            'users/me',
+            self._access_token,
+            partially=True,
+            error401=WrongCredentialsProvidedError
+        )
+
+        match response.status_code:
+            case 200:
+                self.username = username
+                return True
 
     def create_bot(self, name: str) -> Bot:
         response = self._api_helper.post(
@@ -155,7 +168,8 @@ class User:
             },
             'bots',
             self._access_token,
-            error400=WrongDataProvidedError
+            error400=WrongDataProvidedError,
+            error401=WrongCredentialsProvidedError
         )
 
         match response.status_code:
@@ -165,10 +179,6 @@ class User:
 
                 bot = Bot(**data)
                 return bot
-
-            case 401:
-                self._refresh_access()
-                return self.create_bot(name)
 
     def create_chat(self, name: str, group: bool = False, private: bool = False) -> int:
         response = self._api_helper.post(
@@ -307,3 +317,13 @@ class User:
     @property
     def access_token(self):
         return self._access_token
+
+    def delete(self):
+        response = self._api_helper.delete(
+            f'users/{self.id}',
+            self._access_token,
+            error401=WrongCredentialsProvidedError
+        )
+
+        if response.status_code == 204:
+            return True
