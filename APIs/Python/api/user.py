@@ -160,6 +160,7 @@ class User:
         match response.status_code:
             case 201:
                 data = response.json()
+                print(data)
 
                 bot = Bot(**data)
                 return bot

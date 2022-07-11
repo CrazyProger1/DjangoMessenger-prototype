@@ -26,6 +26,10 @@ class BotListCreateAPIView(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         serializer.save(creator=self.request.user, token=generate_key(settings.BOT_TOKEN_LENGTH))
 
+    def get_serializer(self, *args, **kwargs):
+        serializer_class = self.get_serializer_class() if self.request.method != 'POST' else ForOwnerBotSerializer
+        kwargs.setdefault('context', self.get_serializer_context())
+        return serializer_class(*args, **kwargs)
 
 
 class BotRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
