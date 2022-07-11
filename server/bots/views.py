@@ -12,35 +12,37 @@ from .models import *
 from .serializers import *
 from .services import *
 from .permissions import *
+from .extractors import *
 
 
-def generate_key(length: int) -> bytes:
-    return binascii.hexlify(os.urandom(length // 2))
+def generate_key(length: int) -> str:
+    return binascii.hexlify(os.urandom(length // 2)).decode('utf-8')
 
 
 class BotListCreateAPIView(generics.ListCreateAPIView):
     queryset = get_all_bots()
     serializer_class = CommonBotSerializer
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (IsAuthenticatedOrBot,)
 
     def perform_create(self, serializer):
         serializer.save(creator=self.request.user, token=generate_key(settings.BOT_TOKEN_LENGTH))
 
     def get_serializer(self, *args, **kwargs):
-        serializer_class = self.get_serializer_class() if self.request.method != 'POST' else ForOwnerBotSerializer
+        serializer_class = self.get_serializer_class() if self.request.method != 'POST' else PrivateBotSerializer
         kwargs.setdefault('context', self.get_serializer_context())
         return serializer_class(*args, **kwargs)
 
 
 class BotRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
     queryset = get_all_bots()
-    serializer_class = ForOwnerBotSerializer
-    permission_classes = (permissions.IsAuthenticated, IsOwnerOrReadOnly)
+    serializer_class = PrivateBotSerializer
+    permission_classes = (IsAuthenticatedOrBot, IsOwnerOrReadOnly)
 
     def retrieve(self, request, *args, **kwargs):
+        bot = extract_bot(request)
         instance: Bot = self.get_object()
-        if instance.creator == request.user:
-            serializer = ForOwnerBotSerializer(instance)
+        if instance.creator == request.user or (bot and bot.pk == kwargs.get('pk')):
+            serializer = PrivateBotSerializer(instance)
             return response.Response(serializer.data)
         else:
             serializer = CommonBotSerializer(instance)

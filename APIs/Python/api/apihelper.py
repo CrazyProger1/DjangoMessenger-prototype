@@ -23,8 +23,8 @@ def singleton(cls):
 class APIHelper:
     SUCCESS_CODES = (200, 201)
 
-    def __init__(self):
-        self.host = HOST
+    def __init__(self, host: str = None):
+        self.host = HOST or host
         self._adjust_websocket_host()
 
     def _adjust_websocket_host(self):

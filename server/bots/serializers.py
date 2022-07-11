@@ -3,7 +3,7 @@ from django.db import models
 from .models import *
 
 
-class ForOwnerBotSerializer(serializers.ModelSerializer):
+class PrivateBotSerializer(serializers.ModelSerializer):
     class Meta:
         model = Bot
         fields = ('id', 'creator', 'name', 'token')

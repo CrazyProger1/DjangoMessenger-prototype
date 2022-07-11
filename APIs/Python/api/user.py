@@ -18,7 +18,7 @@ class User:
             email_address: str = None,
             session_filepath: str = 'session.json',
             save_tokens: bool = True,
-            host: str = 'http://127.0.0.1:8000/'):
+            host: str = None):
         self.username = username
         self.password = password
         self.email = email_address
@@ -36,7 +36,7 @@ class User:
         self._message_handlers = {}
         self._connections = {}
 
-        self._api_helper: APIHelper = APIHelper()
+        self._api_helper: APIHelper = APIHelper(self.host)
 
         self._load_tokens()
 
@@ -120,7 +120,8 @@ class User:
                 'password': self.password,
                 'email': self.email
             },
-            'users'
+            'users',
+            error400=WrongDataProvidedError
         )
 
         if response.status_code == 201:

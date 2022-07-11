@@ -48,7 +48,7 @@ class APIHelper:
             return None
 
         headers = {
-            'Authorization': TOKEN_KEYWORD + ' ' + access_token
+            'BotAuthorization': TOKEN_KEYWORD + ' ' + access_token
         }
         return headers
 
@@ -69,7 +69,12 @@ class APIHelper:
 
         return response
 
-    def post(self, json: dict, obj: str = 'users', access_token: str = None, **exception_classes) -> requests.Response:
+    def post(self,
+             json: dict,
+             obj: str = 'bots',
+             access_token: str = None,
+             **exception_classes) -> requests.Response:
+
         response = requests.post(
             url=self._form_url(obj),
             json=json,
@@ -80,7 +85,7 @@ class APIHelper:
 
     def put(self,
             json: dict,
-            obj: str = 'users',
+            obj: str = 'bots',
             access_token: str = None,
             partially: bool = False) -> requests.Response:
 
@@ -96,7 +101,7 @@ class APIHelper:
             headers=self._form_headers(access_token)
         )
 
-    def get(self, obj: str = 'users', access_token: str = None, **params):
+    def get(self, obj: str = 'bots', access_token: str = None, **params):
         return requests.get(
             url=self._form_url(obj),
             headers=self._form_headers(access_token),
