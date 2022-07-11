@@ -11,6 +11,7 @@ from channels import exceptions
 from .models import *
 from .serializers import *
 from .services import *
+from bots.extractors import extract_bot_from_scope
 
 
 class ChatConsumer(websocket.WebsocketConsumer):
@@ -18,6 +19,7 @@ class ChatConsumer(websocket.WebsocketConsumer):
         websocket.WebsocketConsumer.__init__(self, *args, **kwargs)
 
         self.user: User | AnonymousUser | None = None
+        self.bot: Bot | None = None
         self.chat_id = 0
         self.chat_group_name = ''
         self.chat: Chat | None = None
@@ -26,11 +28,16 @@ class ChatConsumer(websocket.WebsocketConsumer):
 
     def connect(self):
         self.user = self.scope['user']
+        self.bot = extract_bot_from_scope(self.scope)
         self.chat_id = self.scope['url_route']['kwargs']['chat_id']
 
         try:
             self.chat = get_chat_by_id(self.chat_id)
-            self.chat_member = find_chat_members(chat=self.chat_id, user=self.user.pk).first()
+
+            if self.user:
+                self.chat_member = find_chat_members(chat=self.chat_id, user=self.user.pk).first()
+            elif self.bot:
+                self.chat_member = find_chat_members(chat=self.chat_id, bot=self.bot.pk).first()
 
             if self.chat_member is None:
                 raise models.ObjectDoesNotExist('Chat member matching query does not exists')
@@ -66,18 +73,27 @@ class ChatConsumer(websocket.WebsocketConsumer):
 
         serializer.save(sending_datetime=timezone.now(), sender=self.chat_member, chat=self.chat)
 
+        if self.user:
+            sender = {
+                'id': self.user.pk,
+                'type': 'user',
+                'name': self.user.username,
+                'first_name': self.user.first_name,
+                'last_name': self.user.last_name,
+            }
+        else:
+            sender = {
+                'id': self.bot.pk,
+                'type': 'bot',
+                'name': self.bot.name
+            }
+
         async_to_sync(self.channel_layer.group_send)(
             self.chat_group_name,
             {
                 'type': 'chat_message',
                 'message': serializer.data,
-                'sender': {
-                    'id': self.user.pk,
-                    'type': 'user',
-                    'name': self.user.username,
-                    'first_name': self.user.first_name,
-                    'last_name': self.user.last_name,
-                }
+                'sender': sender
             }
         )
 

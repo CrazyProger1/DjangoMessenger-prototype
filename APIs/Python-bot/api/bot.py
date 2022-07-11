@@ -18,7 +18,6 @@ class Bot:
             'bots/me',
             self.token,
             error401=WrongCredentialsProvidedError
-
         )
 
         if response.status_code == 200:

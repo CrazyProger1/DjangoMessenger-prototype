@@ -11,7 +11,7 @@ from .permissions import *
 class MessageListAPIView(generics.ListAPIView):
     queryset = get_all_messages()
     serializer_class = MessageSerializer
-    permission_classes = (permissions.IsAuthenticated, IsChatMember)
+    permission_classes = (IsAuthenticatedOrBot, IsChatMember)
 
     def get_queryset(self):
         last_read: str = self.request.GET.get('last_read')
