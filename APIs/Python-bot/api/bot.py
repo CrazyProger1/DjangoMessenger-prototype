@@ -1,4 +1,5 @@
 from .apihelper import APIHelper
+from .exceptions import *
 
 
 class Bot:
@@ -12,5 +13,16 @@ class Bot:
 
         self._api_helper: APIHelper = APIHelper(self.host)
 
-    # def authorize(self):
-    #     self._api_helper.get()
+    def authorize(self):
+        response = self._api_helper.get(
+            'bots/me',
+            self.token,
+            error401=WrongCredentialsProvidedError
+
+        )
+
+        if response.status_code == 200:
+            data: dict = response.json()
+            self.id = data.get('id')
+            self.creator_id = data.get('creator')
+            self.name = data.get('name')

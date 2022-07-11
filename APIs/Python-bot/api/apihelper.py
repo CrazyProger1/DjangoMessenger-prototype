@@ -23,8 +23,8 @@ def singleton(cls):
 class APIHelper:
     SUCCESS_CODES = (200, 201)
 
-    def __init__(self):
-        self.host = HOST
+    def __init__(self, host: str):
+        self.host = HOST or host
         self._adjust_websocket_host()
 
     def _adjust_websocket_host(self):
@@ -87,26 +87,29 @@ class APIHelper:
             json: dict,
             obj: str = 'bots',
             access_token: str = None,
-            partially: bool = False) -> requests.Response:
+            partially: bool = False,
+            **exception_classes) -> requests.Response:
 
         if not partially:
-            return requests.put(
+            return self._handle_errors(requests.put(
                 url=self._form_url(obj),
                 json=json,
-                headers=self._form_headers(access_token)
+                headers=self._form_headers(access_token), **exception_classes)
             )
-        return requests.patch(
+        return self._handle_errors(requests.patch(
             url=self._form_url(obj),
             json=json,
             headers=self._form_headers(access_token)
-        )
+        ), **exception_classes)
 
-    def get(self, obj: str = 'bots', access_token: str = None, **params):
-        return requests.get(
+    def get(self, obj: str = 'bots', access_token: str = None, params: dict = None, **exception_classes):
+        response = requests.get(
             url=self._form_url(obj),
             headers=self._form_headers(access_token),
             params=params
         )
+
+        return self._handle_errors(response, **exception_classes)
 
     def connect_to_chat(self, chat_id: int, access_token: str = None):
         websocket.enableTrace(False)
