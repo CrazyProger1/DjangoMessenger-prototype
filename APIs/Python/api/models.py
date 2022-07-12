@@ -16,7 +16,7 @@ class Chat(BaseModel):
         table_name = 'Chat'
 
 
-class User:
+class User(BaseModel):
     id = peewee.AutoField()
     server_id = peewee.IntegerField(unique=True, null=False)
     username = peewee.CharField(max_length=200)
