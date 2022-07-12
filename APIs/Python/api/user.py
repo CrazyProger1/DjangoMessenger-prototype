@@ -6,6 +6,7 @@ from typing import Iterable
 from .exceptions import *
 from .config import *
 from .apihelper import *
+from .dbhelper import *
 from .bot import *
 from .message import *
 
@@ -37,6 +38,7 @@ class User:
         self._connections = {}
 
         self._api_helper: APIHelper = APIHelper(self._host)
+        self._db_helper: DatabaseHelper = DatabaseHelper()
 
         self._load_tokens()
 
