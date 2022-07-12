@@ -1,7 +1,6 @@
 import api
 
-user = api.User('admin2', 'STRONG!@#', save_tokens=False, email_address='crazy@crazy.com')
-user.login()
+user = api.User('admin2', 'STRONG!@#', save_tokens=True, email_address='crazy@crazy.com')
 
 
 if __name__ == "__main__":

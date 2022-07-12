@@ -5,7 +5,7 @@ import api.exceptions
 
 class TestBot(unittest.TestCase):
     def setUp(self) -> None:
-        self.user = api.User('TestUserQ1', 'BIGSTRONGPASS', 'testuser@gmail.com', save_tokens=False)
+        self.user = api.UserModel('TestUserQ1', 'BIGSTRONGPASS', 'testuser@gmail.com', save_tokens=False)
         self.user.register()
 
     def test_bot_creation(self):

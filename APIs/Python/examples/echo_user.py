@@ -1,7 +1,7 @@
 import api
 from api.message import Message
 
-user = api.User(
+user = api.UserModel(
     username='crazy0',
     password='StrongPassword',
     save_tokens=False,

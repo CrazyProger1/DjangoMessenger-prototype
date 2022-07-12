@@ -1,6 +1,8 @@
 import json
 import os
 import requests
+import peewee
+
 from typing import Iterable
 
 from .exceptions import *
@@ -9,6 +11,7 @@ from .apihelper import *
 from .dbhelper import *
 from .bot import *
 from .message import *
+from .models import *
 
 
 class User:
@@ -20,6 +23,7 @@ class User:
             session_filepath: str = 'session.json',
             save_tokens: bool = True,
             host: str = None):
+
         self._username = username
         self._password = password
         self._email = email_address
@@ -41,6 +45,18 @@ class User:
         self._db_helper: DatabaseHelper = DatabaseHelper()
 
         self._load_tokens()
+
+    def get_local_database(self) -> peewee.SqliteDatabase:
+        return self._db_helper.get_connection()
+
+    def _save_user(self):
+        self._db_helper.save(
+            model=UserModel,
+            username=self._username,
+            server_id=self._id,
+            access_token=self._access_token if self._allow_tokens_saving else None,
+            refresh_token=self._refresh_token if self._allow_tokens_saving else None
+        )
 
     @property
     def username(self):
@@ -70,28 +86,13 @@ class User:
         if not self._allow_tokens_saving:
             return
 
-        if os.path.exists(self._session_filepath):
-            with open(self._session_filepath, 'r') as session_file:
-                try:
-                    tokens: dict = json.load(session_file)
-                except json.decoder.JSONDecodeError:
-                    raise SessionLoadError('Session file has invalid format')
-
-                self._access_token = tokens.get('access')
-                self._refresh_token = tokens.get('refresh')
-
-    def _save_tokens(self):
-        if not self._allow_tokens_saving:
-            return
-
-        with open(self._session_filepath, 'w') as session_file:
-            json.dump(
-                {
-                    'access': self._access_token,
-                    'refresh': self._refresh_token
-                },
-                session_file
-            )
+        user: UserModel = self._db_helper.load(
+            UserModel,
+            username=self._username
+        )
+        if user:
+            self._access_token = user.access_token
+            self._refresh_token = user.refresh_token
 
     def refresh_access(self):
         response = self._api_helper.post(
@@ -104,7 +105,6 @@ class User:
         data: dict = response.json()
 
         self._access_token = data.get('access')
-        self._save_tokens()
         return True
 
     def _grab_user_info(self):
@@ -119,9 +119,18 @@ class User:
         self._email = data.get('email')
         self._first_name = data.get('first_name')
         self._last_name = data.get('last_name')
+        self._save_user()
         return True
 
     def login(self):
+        try:
+            if self._allow_tokens_saving and self._refresh_token:
+                self.refresh_access()
+                self._grab_user_info()
+                return
+        except RefreshExpiredError:
+            pass
+
         response = self._api_helper.post(
             {
                 'username': self._username,
@@ -135,7 +144,6 @@ class User:
 
         self._access_token = data.get('access')
         self._refresh_token = data.get('refresh')
-        self._save_tokens()
         self._grab_user_info()
         return True
 
