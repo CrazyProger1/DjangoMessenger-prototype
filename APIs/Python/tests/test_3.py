@@ -5,9 +5,9 @@ import api.exceptions
 
 class TestChat(unittest.TestCase):
     def setUp(self) -> None:
-        self.user = api.User('TestUser', 'BIGSTRONGPASS', 'testuser@gmail.com', save_tokens=False)
-        self.user2 = api.User('TestUser2', 'BIGSTRONGPASS', 'testuser2@gmail.com', save_tokens=False)
-        self.user3 = api.User('TestUser3', 'BIGSTRONGPASS', 'testuser3@gmail.com', save_tokens=False)
+        self.user = api.User('TestUserQ1', 'BIGSTRONGPASS', 'testuser@gmail.com', save_tokens=False)
+        self.user2 = api.User('TestUserQ2', 'BIGSTRONGPASS', 'testuser2@gmail.com', save_tokens=False)
+        self.user3 = api.User('TestUserQ3', 'BIGSTRONGPASS', 'testuser3@gmail.com', save_tokens=False)
 
         self.user.register()
         self.user2.register()

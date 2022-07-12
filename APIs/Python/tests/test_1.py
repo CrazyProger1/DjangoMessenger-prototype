@@ -5,7 +5,7 @@ import api.exceptions
 
 class TestUser(unittest.TestCase):
     def setUp(self) -> None:
-        self.user = api.User('TestUser', 'BIGSTRONGPASS', 'testuser@gmail.com', save_tokens=False)
+        self.user = api.User('TestUserQ1', 'BIGSTRONGPASS', 'testuser@gmail.com', save_tokens=False)
         self.user.register()
 
     def test_login(self):
@@ -33,7 +33,7 @@ class TestUser(unittest.TestCase):
 
     def test_change_username(self):
         username_before = self.user._username
-        self.user.change_username('testuser2')
+        self.user.change_username('TestUser1')
         self.user.login()
         self.assertNotEqual(username_before, self.user._username)
 

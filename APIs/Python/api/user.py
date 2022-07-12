@@ -23,7 +23,7 @@ class User:
         self._password = password
         self._email = email_address
         self._session_filepath = session_filepath
-        self._save_tokens = save_tokens
+        self._allow_tokens_saving = save_tokens
         self._host = host
 
         self._id: int | None = None
@@ -65,7 +65,7 @@ class User:
         return self._last_name
 
     def _load_tokens(self):
-        if not self._save_tokens:
+        if not self._allow_tokens_saving:
             return
 
         if os.path.exists(self._session_filepath):
@@ -79,7 +79,7 @@ class User:
                 self._refresh_token = tokens.get('refresh')
 
     def _save_tokens(self):
-        if not self._save_tokens:
+        if not self._allow_tokens_saving:
             return
 
         with open(self._session_filepath, 'w') as session_file:
