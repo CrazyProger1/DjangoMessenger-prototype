@@ -43,14 +43,20 @@ class TestUser(unittest.TestCase):
 
     def test_send_message(self):
         self.bla_bla_got = False
-        chat_id = self.user.create_chat('testuserchat')
+        try:
+            chat_id = self.user.create_chat('testuserchat')
+        except Exception as e:
+            print('Chat creation error: ', e)
+            return
+
         self.user.send_message(chat_id, 'bla bla bla')
         self.user.message_handler()(self.message_handler)
         self.user.get_unread_messages(chat_id)
         self.assertTrue(self.bla_bla_got)
 
-    def tearDown(self) -> None:
-        try:
-            self.user.delete()
-        except api.exceptions.WrongCredentialsProvidedError:
-            pass
+
+def tearDown(self) -> None:
+    try:
+        self.user.delete()
+    except api.exceptions.WrongCredentialsProvidedError:
+        pass

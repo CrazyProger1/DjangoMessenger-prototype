@@ -22,9 +22,9 @@ class MessageListAPIView(generics.ListAPIView):
         return self.filter_queryset(get_unread_messages(self.kwargs.get('chat_pk'), last_read_id + 1))
 
     @staticmethod
-    def extend_messages(messages, senders):
+    def extend_messages(ordered_messages, ordered_senders):
         data = []
-        for message, sender in zip(messages, senders):
+        for message, sender in zip(ordered_messages, ordered_senders):
             sender: ChatMember
 
             if sender.user:
