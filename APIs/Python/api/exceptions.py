@@ -21,3 +21,7 @@ class WrongCredentialsProvidedError(BaseAPIError):
 
 class RefreshExpiredError(BaseAPIError):
     pass
+
+
+class ChatOverflowError(BaseAPIError):
+    pass

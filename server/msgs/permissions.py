@@ -8,13 +8,8 @@ class IsAuthenticatedOrBot(permissions.BasePermission):
         if bool(request.user and request.user.is_authenticated):
             return True
 
-        token = request.headers.get('BotAuthorization', False)
-        if token:
-            bot = extract_bot_from_request(request)
-
-            if bot:
-                view.kwargs.update({'bot': bot})
-                return True
+        if request.bot:
+            return True
 
 
 class IsChatMember(permissions.BasePermission):
@@ -24,5 +19,5 @@ class IsChatMember(permissions.BasePermission):
         if find_chat_members(user=request.user, chat=chat_id).first():
             return True
 
-        if find_chat_members(bot=view.kwargs.get('bot'), chat=chat_id).first():
+        if find_chat_members(bot=request.bot, chat=chat_id).first():
             return True

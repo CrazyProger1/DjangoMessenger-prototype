@@ -3,7 +3,7 @@ import unittest
 import api.exceptions
 
 
-class TestBotCreation(unittest.TestCase):
+class TestBot(unittest.TestCase):
     def setUp(self) -> None:
         self.user = api.User('TestUser', 'BIGSTRONGPASS', 'testuser@gmail.com', save_tokens=False)
         self.user.register()

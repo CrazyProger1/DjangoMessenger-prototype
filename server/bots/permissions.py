@@ -1,5 +1,4 @@
 from rest_framework import permissions
-from .extractors import *
 
 
 class IsOwnerOrReadOnly(permissions.BasePermission):
@@ -18,24 +17,8 @@ class IsAuthenticatedOrBot(permissions.BasePermission):
         if request.bot:
             return True
 
-        # token = request.headers.get('BotAuthorization', False)
-        # if token:
-        #     bot = extract_bot_from_request(request)
-        #
-        #     if bot:
-        #         view.kwargs.update({'bot': bot})
-        #         return True
-
 
 class IsBot(permissions.BasePermission):
     def has_permission(self, request, view):
         if request.bot:
             return True
-
-        # token = request.headers.get('BotAuthorization', False)
-        # if token:
-        #     bot = extract_bot_from_request(request)
-        #
-        #     if bot:
-        #         view.kwargs.update({'bot': bot})
-        #         return True
