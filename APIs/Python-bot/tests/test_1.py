@@ -13,4 +13,4 @@ class TestUser(unittest.TestCase):
 
         self.bot.authorize()
 
-        self.assertIsNotNone(self.bot._id)
+        self.assertIsNotNone(self.bot.id)

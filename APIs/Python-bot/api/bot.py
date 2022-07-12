@@ -12,8 +12,8 @@ import rel
 
 class Bot:
     def __init__(self, token: str, host: str = None):
-        self.token = token
-        self.host = host
+        self._token = token
+        self._host = host
 
         self._name: str | None = None
         self._id: int | None = None
@@ -22,7 +22,7 @@ class Bot:
         self._message_handlers = {}
         self._connections = {}
 
-        self._api_helper: APIHelper = APIHelper(self.host)
+        self._api_helper: APIHelper = APIHelper(self._host)
 
     @property
     def name(self):
@@ -36,10 +36,14 @@ class Bot:
     def creator_id(self):
         return self._creator_id
 
+    @property
+    def token(self):
+        return self._token
+
     def authorize(self):
         response = self._api_helper.get(
             'bots/me',
-            self.token,
+            self._token,
             error401=WrongCredentialsProvidedError
         )
 
@@ -63,7 +67,7 @@ class Bot:
         connection: websocket.WebSocketApp = self._connections.get(chat_id)
 
         if not connection:
-            connection = self._api_helper.connect_to_chat(chat_id, self.token)
+            connection = self._api_helper.connect_to_chat(chat_id, self._token)
             self._connections.update({chat_id: connection})
 
         if not attach_files:
@@ -91,7 +95,7 @@ class Bot:
     def get_chat_ids(self) -> Iterable[int]:
         response = self._api_helper.get(
             'chats/members/my',
-            self.token
+            self._token
         )
         results = response.json().get('results')
 
@@ -130,7 +134,7 @@ class Bot:
     def get_unread_messages(self, chat_id: int):
         response = self._api_helper.get(
             f'chats/{chat_id}/messages',
-            self.token,
+            self._token,
             last_read=self._load_last_read_message()
         )
 
@@ -141,7 +145,7 @@ class Bot:
 
     def run_polling(self, load_unread_messages: bool = True):
         for chat_id in self.get_chat_ids():
-            connection = self._api_helper.connect_to_chat(chat_id, self.token)
+            connection = self._api_helper.connect_to_chat(chat_id, self._token)
             self._connections.update({chat_id: connection})
             connection.on_message = self._handle_message
             if load_unread_messages:

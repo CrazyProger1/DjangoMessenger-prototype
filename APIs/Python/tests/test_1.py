@@ -12,7 +12,7 @@ class TestUser(unittest.TestCase):
         self.user.login()
 
         self.assertIsNotNone(self.user.access_token)
-        self.assertIsNotNone(self.user._id)
+        self.assertIsNotNone(self.user.id)
 
     def test_delete(self):
         self.user.delete()
