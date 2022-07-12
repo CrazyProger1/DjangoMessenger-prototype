@@ -17,7 +17,7 @@ class MyChatMembersListAPIView(generics.ListAPIView):
         if self.request.user.is_authenticated:
             return find_chat_members(user=self.request.user)
         else:
-            return find_chat_members(bot=self.kwargs.get('bot'))
+            return find_chat_members(bot=self.request.bot)
 
 
 class ChatViewSet(viewsets.ModelViewSet):

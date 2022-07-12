@@ -177,7 +177,8 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 100,
 
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        # 'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'users.jwt_auth.BotSupportingJWTAuthentication'
     ],
 
     'DEFAULT_PERMISSION_CLASSES': (

@@ -8,13 +8,15 @@ class IsAuthenticatedOrBot(permissions.BasePermission):
         if bool(request.user and request.user.is_authenticated):
             return True
 
-        token = request.headers.get('BotAuthorization', False)
-        if token:
-            bot = extract_bot_from_request(request)
-
-            if bot:
-                view.kwargs.update({'bot': bot})
-                return True
+        # token = request.headers.get('BotAuthorization', False)
+        # if token:
+        #     bot = extract_bot_from_request(request)
+        #
+        #     if bot:
+        #         view.kwargs.update({'bot': bot})
+        #         return True
+        if request.bot:
+            return True
 
 
 class IsChatExists(permissions.BasePermission):

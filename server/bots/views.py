@@ -38,7 +38,7 @@ class BotRetrieveUpdateDestroyAPIView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = (IsAuthenticatedOrBot, IsOwnerOrReadOnly)
 
     def retrieve(self, request, *args, **kwargs):
-        bot = kwargs.get('bot')
+        bot = self.request.bot
         instance: Bot = self.get_object()
         if instance.creator == request.user or (bot and bot.pk == kwargs.get('pk')):
             serializer = PrivateBotSerializer(instance)
@@ -56,8 +56,6 @@ class BotRetrieveAPIView(
     permission_classes = (IsBot,)
 
     def get_object(self):
-        obj = self.kwargs.get('bot')
-        if obj:
-            return obj
+        if self.request.bot:
+            return self.request.bot
         return super(BotRetrieveAPIView, self).get_object()
-
