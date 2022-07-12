@@ -15,14 +15,26 @@ class Bot:
         self.token = token
         self.host = host
 
-        self.name: str | None = None
-        self.id: int | None = None
-        self.creator_id: int | None = None
+        self._name: str | None = None
+        self._id: int | None = None
+        self._creator_id: int | None = None
 
         self._message_handlers = {}
         self._connections = {}
 
         self._api_helper: APIHelper = APIHelper(self.host)
+
+    @property
+    def name(self):
+        return self._name
+
+    @property
+    def id(self):
+        return self._id
+
+    @property
+    def creator_id(self):
+        return self._creator_id
 
     def authorize(self):
         response = self._api_helper.get(
@@ -33,9 +45,9 @@ class Bot:
 
         if response.status_code == 200:
             data: dict = response.json()
-            self.id = data.get('id')
-            self.creator_id = data.get('creator')
-            self.name = data.get('name')
+            self._id = data.get('id')
+            self._creator_id = data.get('creator')
+            self._name = data.get('name')
 
     def _send_message(self,
                       chat_id: int,
@@ -98,7 +110,7 @@ class Bot:
 
         for handler, options in self._message_handlers.items():
             if options.get('ignore_my'):
-                if self.id == sender_data.get('id'):
+                if self._id == sender_data.get('id'):
                     continue
 
             handler(Message(**message_data, sender=Sender(**sender_data)))
