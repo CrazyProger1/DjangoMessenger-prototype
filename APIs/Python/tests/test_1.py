@@ -37,6 +37,18 @@ class TestUser(unittest.TestCase):
         self.user.login()
         self.assertNotEqual(username_before, self.user._username)
 
+    def message_handler(self, msg):
+        if msg.text == 'bla bla bla':
+            self.bla_bla_got = True
+
+    def test_send_message(self):
+        self.bla_bla_got = False
+        chat_id = self.user.create_chat('testuserchat')
+        self.user.send_message(chat_id, 'bla bla bla')
+        self.user.message_handler()(self.message_handler)
+        self.user.get_unread_messages(chat_id)
+        self.assertTrue(self.bla_bla_got)
+
     def tearDown(self) -> None:
         try:
             self.user.delete()
