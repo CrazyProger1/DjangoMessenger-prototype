@@ -54,9 +54,8 @@ class TestUser(unittest.TestCase):
         self.user.get_unread_messages(chat_id)
         self.assertTrue(self.bla_bla_got)
 
-
-def tearDown(self) -> None:
-    try:
-        self.user.delete()
-    except api.exceptions.WrongCredentialsProvidedError:
-        pass
+    def tearDown(self) -> None:
+        try:
+            self.user.delete()
+        except api.exceptions.WrongCredentialsProvidedError:
+            pass
