@@ -5,7 +5,7 @@ import api.exceptions
 
 class TestUser(unittest.TestCase):
     def setUp(self) -> None:
-        self.user = api.UserModel('TestUserQ1', 'BIGSTRONGPASS', 'testuser@gmail.com', save_tokens=False)
+        self.user = api.User('TestUserQ1', 'BIGSTRONGPASS', 'testuser@gmail.com', save_tokens=False)
         self.user.register()
 
     def test_login(self):

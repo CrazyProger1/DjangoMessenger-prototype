@@ -49,7 +49,7 @@ class User:
     def get_local_database(self) -> peewee.SqliteDatabase:
         return self._db_helper.get_connection()
 
-    def _save_user(self):
+    def _save_user_to_db(self):
         self._db_helper.save(
             model=UserModel,
             username=self._username,
@@ -57,6 +57,11 @@ class User:
             access_token=self._access_token if self._allow_tokens_saving else None,
             refresh_token=self._refresh_token if self._allow_tokens_saving else None
         )
+
+    def _delete_user_from_db(self):
+        user = self._db_helper.load(UserModel, server_id=self._id)
+        if user:
+            user.delete_instance()
 
     @property
     def username(self):
@@ -119,7 +124,7 @@ class User:
         self._email = data.get('email')
         self._first_name = data.get('first_name')
         self._last_name = data.get('last_name')
-        self._save_user()
+        self._save_user_to_db()
         return True
 
     def login(self):
@@ -305,11 +310,16 @@ class User:
             for message_data in messages_data:
                 self._handle_message(None, message_data)
 
+    def _connect_to_chat(self, chat_id: int):
+        connection = self._api_helper.connect_to_chat(chat_id, self._access_token)
+        self._connections.update({chat_id: connection})
+        connection.on_message = self._handle_message
+        return connection
+
     def run_polling(self, load_unread_messages: bool = True):
         for chat_id in self.get_chat_ids():
-            connection = self._api_helper.connect_to_chat(chat_id, self._access_token)
-            self._connections.update({chat_id: connection})
-            connection.on_message = self._handle_message
+            self._connect_to_chat(chat_id)
+
             if load_unread_messages:
                 self.get_unread_messages(chat_id)
 
@@ -330,8 +340,7 @@ class User:
         connection: websocket.WebSocketApp = self._connections.get(chat_id)
 
         if not connection:
-            connection = self._api_helper.connect_to_chat(chat_id, self.access_token)
-            self._connections.update({chat_id: connection})
+            connection = self._connect_to_chat(chat_id)
 
         if not attach_files:
             message_string = json.dumps({
@@ -349,6 +358,7 @@ class User:
         self._send_message(chat_id, text)
 
     def delete(self):
+
         response = self._api_helper.delete(
             f'users/{self._id}',
             self._access_token,
@@ -357,3 +367,5 @@ class User:
 
         if response.status_code == 204:
             return True
+
+        self._delete_user_from_db()

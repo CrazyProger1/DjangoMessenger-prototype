@@ -27,7 +27,7 @@ class DatabaseHelper:
                 instance = model.get(server_id=key_values.get('server_id'))
             else:
                 instance = model.get(id=key_values.get('id'))
-        except Exception:
+        except Exception as e:
             return model.create(**key_values)
 
         for key, value in key_values.items():
