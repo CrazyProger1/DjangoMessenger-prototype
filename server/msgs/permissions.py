@@ -1,6 +1,7 @@
 from rest_framework import permissions
 from chats.services import find_chat_members
 from bots.extractors import extract_bot_from_request
+from django.contrib.auth.models import User, AnonymousUser
 
 
 class IsAuthenticatedOrBot(permissions.BasePermission):
@@ -20,7 +21,7 @@ class IsChatMember(permissions.BasePermission):
     def has_permission(self, request, view):
         chat_id = view.kwargs.get('chat_pk')
 
-        if find_chat_members(user=request.user, chat=chat_id).first():
+        if isinstance(request.user, User) and find_chat_members(user=request.user, chat=chat_id).first():
             return True
 
         if find_chat_members(bot=request.bot, chat=chat_id).first():

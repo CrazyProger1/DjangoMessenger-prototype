@@ -40,9 +40,7 @@ class MessageListAPIView(generics.ListAPIView):
                 sender_data = {
                     'id': sender.bot.pk,
                     'type': 'bot',
-                    'name': sender.bot.username,
-                    'first_name': sender.bot.first_name,
-                    'last_name': sender.bot.last_name,
+                    'name': sender.bot.name,
 
                 }
 
