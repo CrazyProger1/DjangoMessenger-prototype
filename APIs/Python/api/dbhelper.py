@@ -21,26 +21,24 @@ class DatabaseHelper:
             cls._meta.database = self._connection
 
     @staticmethod
-    def save(model, **key_values):
-        try:
-            if key_values.get('server_id'):
-                instance = model.get(server_id=key_values.get('server_id'))
-            else:
-                instance = model.get(id=key_values.get('id'))
-        except Exception as e:
-            return model.create(**key_values)
+    def save(model, **data):
+        if data.get('server_id'):
+            instance = model.get_or_none(server_id=data.get('server_id'))
+        else:
+            instance = model.get_or_none(id=data.get('id'))
 
-        for key, value in key_values.items():
+        if not instance:
+            return model.create(**data)
+
+        for key, value in data.items():
             instance.__setattr__(key, value or instance.__getattribute__(key))
+
         instance.save()
         return instance
 
     @staticmethod
-    def load(model, **key_values):
-        try:
-            return model.get(**key_values)
-        except Exception:
-            return None
+    def load(model, **known_data):
+        return model.get_or_none(**known_data)
 
     def __del__(self):
         self._connection.close()

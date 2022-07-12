@@ -1,15 +1,9 @@
 import json
-import os
-import requests
-import peewee
-
 from typing import Iterable
 
-from .exceptions import *
-from .config import *
 from .apihelper import *
-from .dbhelper import *
 from .bot import *
+from .dbhelper import *
 from .message import *
 from .models import *
 
@@ -21,14 +15,14 @@ class User:
             password: str = None,
             email_address: str = None,
             session_filepath: str = 'session.json',
-            save_tokens: bool = True,
+            save_tokens=False,
             host: str = None):
 
         self._username = username
         self._password = password
         self._email = email_address
         self._session_filepath = session_filepath
-        self._allow_tokens_saving = save_tokens
+        self._allow_token_saving = save_tokens
         self._host = host
 
         self._id: int | None = None
@@ -43,25 +37,6 @@ class User:
 
         self._api_helper: APIHelper = APIHelper(self._host)
         self._db_helper: DatabaseHelper = DatabaseHelper()
-
-        self._load_tokens()
-
-    def get_local_database(self) -> peewee.SqliteDatabase:
-        return self._db_helper.get_connection()
-
-    def _save_user_to_db(self):
-        self._db_helper.save(
-            model=UserModel,
-            username=self._username,
-            server_id=self._id,
-            access_token=self._access_token if self._allow_tokens_saving else None,
-            refresh_token=self._refresh_token if self._allow_tokens_saving else None
-        )
-
-    def _delete_user_from_db(self):
-        user = self._db_helper.load(UserModel, server_id=self._id)
-        if user:
-            user.delete_instance()
 
     @property
     def username(self):
@@ -87,32 +62,38 @@ class User:
     def last_name(self):
         return self._last_name
 
-    def _load_tokens(self):
-        if not self._allow_tokens_saving:
-            return
+    def get_local_database(self) -> peewee.SqliteDatabase:
+        return self._db_helper.get_connection()
 
-        user: UserModel = self._db_helper.load(
-            UserModel,
-            username=self._username
-        )
-        if user:
-            self._access_token = user.access_token
-            self._refresh_token = user.refresh_token
+    def _send_message(self,
+                      chat_id: int,
+                      text: str,
+                      attach_files: bool = False,
+                      files: Iterable[str] = (),
+                      files_password: str = None,
+                      is_reply: bool = False,
+                      reply_on: int = None,
+                      initial_message: bool = False
+                      ):
 
-    def refresh_access(self):
-        response = self._api_helper.post(
-            {
-                'refresh': self._refresh_token
-            },
-            'users/token/refresh',
-            error401=RefreshExpiredError
-        )
-        data: dict = response.json()
+        connection: websocket.WebSocketApp = self._connections.get(chat_id)
 
-        self._access_token = data.get('access')
-        return True
+        if not connection:
+            connection = self._connect_to_chat(chat_id)
 
-    def _grab_user_info(self):
+        if not attach_files:
+            message_string = json.dumps({
+                'type': 'text',
+                'text': text,
+                'files_password': files_password,
+                'encryption_type': 'RSA',
+                'initial': initial_message,
+                'is_reply': is_reply,
+                'reply_on': reply_on
+            })
+            connection.send(message_string)
+
+    def _update_user_info(self):
         response = self._api_helper.get(
             'users/me',
             self._access_token
@@ -124,18 +105,97 @@ class User:
         self._email = data.get('email')
         self._first_name = data.get('first_name')
         self._last_name = data.get('last_name')
+
         self._save_user_to_db()
         return True
 
-    def login(self):
-        try:
-            if self._allow_tokens_saving and self._refresh_token:
-                self.refresh_access()
-                self._grab_user_info()
-                return
-        except RefreshExpiredError:
-            pass
+    def _handle_message(self, connection, string_data):
+        if connection:
+            data: dict = json.loads(string_data)
+            message_data = data.get('message')
+            sender_data = data.get('sender')
+        else:
+            message_data = string_data.get('message')
+            sender_data = string_data.get('sender')
 
+        for handler, options in self._message_handlers.items():
+            if options.get('ignore_my'):
+                if self._id == sender_data.get('id'):
+                    continue
+
+            message = Message(**message_data, sender=Sender(**sender_data))
+            handler(message)
+            self._save_last_read_message(
+                chat_id=message.chat_id,
+                message_id=message.id
+            )
+
+    def _save_last_read_message(self, chat_id: int, message_id: int):
+        self._db_helper.save(
+            ChatModel,
+            server_id=chat_id,
+            last_read_message=message_id
+        )
+
+    def _load_last_read_message(self, chat_id: int):
+        chat = self._db_helper.load(
+            ChatModel,
+            server_id=chat_id
+        )
+
+        if chat:
+            return chat.last_read_message
+        return 0
+
+    def _connect_to_chat(self, chat_id: int):
+        connection = self._api_helper.connect_to_chat(chat_id, self._access_token)
+        self._connections.update({chat_id: connection})
+        connection.on_message = self._handle_message
+        return connection
+
+    def _save_user_to_db(self):
+        data = {
+            'server_id': self._id,
+            'username': self._username,
+        }
+
+        if self._allow_token_saving:
+            data.update({
+                'access_token': self._access_token,
+                'refresh_token': self._refresh_token
+            })
+
+        self._db_helper.save(
+            UserModel,
+            **data
+        )
+
+    def _delete_user_from_db(self):
+        data = {
+            'server_id': self._id,
+            'username': self._username,
+        }
+
+        instance = self._db_helper.load(UserModel, **data)
+
+        if instance:
+            instance.delete_instance()
+
+    def refresh_access(self):
+        response = self._api_helper.post(
+            {
+                'refresh': self._refresh_token
+            },
+            'users/token/refresh',
+            error401=RefreshExpiredError
+        )
+
+        if response.status_code == 200:
+            data: dict = response.json()
+            self._access_token = data.get('access')
+            return True
+
+    def login(self):
         response = self._api_helper.post(
             {
                 'username': self._username,
@@ -145,12 +205,13 @@ class User:
             error401=WrongCredentialsProvidedError
         )
 
-        data: dict = response.json()
+        if response.status_code == 200:
+            data: dict = response.json()
 
-        self._access_token = data.get('access')
-        self._refresh_token = data.get('refresh')
-        self._grab_user_info()
-        return True
+            self._access_token = data.get('access')
+            self._refresh_token = data.get('refresh')
+            self._update_user_info()
+            return True
 
     def register(self):
         response = self._api_helper.post(
@@ -178,11 +239,10 @@ class User:
             error401=WrongCredentialsProvidedError
         )
 
-        match response.status_code:
-            case 200:
-                self._first_name = first_name
-                self._last_name = last_name
-                return True
+        if response.status_code == 200:
+            self._first_name = first_name
+            self._last_name = last_name
+            return True
 
     def change_username(self, username: str):
         response = self._api_helper.put(
@@ -195,10 +255,9 @@ class User:
             error401=WrongCredentialsProvidedError
         )
 
-        match response.status_code:
-            case 200:
-                self._username = username
-                return True
+        if response.status_code == 200:
+            self._username = username
+            return True
 
     def create_bot(self, name: str) -> Bot:
         response = self._api_helper.post(
@@ -211,12 +270,11 @@ class User:
             error401=WrongCredentialsProvidedError
         )
 
-        match response.status_code:
-            case 201:
-                data = response.json()
+        if response.status_code == 201:
+            data = response.json()
 
-                bot = Bot(**data)
-                return bot
+            bot = Bot(**data)
+            return bot
 
     def create_chat(self, name: str, group: bool = False, private: bool = False) -> int:
         response = self._api_helper.post(
@@ -229,12 +287,12 @@ class User:
             self._access_token,
             error400=WrongDataProvidedError
         )
-        match response.status_code:
-            case 201:
-                data = response.json()
+        if response.status_code == 201:
+            data = response.json()
 
-                chat_id = data.get('id')
-                return chat_id
+            chat_id = data.get('id')
+            self._connect_to_chat(chat_id)
+            return chat_id
 
     def add_chat_member(self, chat_id: int, user_id: int = None, bot_id: int = None):
         response = self._api_helper.post(
@@ -270,51 +328,17 @@ class User:
             for result in results:
                 yield result.get('chat')
 
-    def _handle_message(self, connection, string_data):
-        if connection:
-            data: dict = json.loads(string_data)
-            message_data = data.get('message')
-            sender_data = data.get('sender')
-        else:
-            message_data = string_data.get('message')
-            sender_data = string_data.get('sender')
-
-        for handler, options in self._message_handlers.items():
-            if options.get('ignore_my'):
-                if self._id == sender_data.get('id'):
-                    continue
-
-            handler(Message(**message_data, sender=Sender(**sender_data)))
-            self._save_last_read_message(message_data.get('id'))
-
-    def _save_last_read_message(self, message_id: int):  # test variant
-        with open('lrm', 'w') as f:
-            f.write(str(message_id))
-
-    def _load_last_read_message(self):  # test variant
-        try:
-            with open('lrm', 'r') as f:
-                return int(f.read())
-        except FileNotFoundError:
-            self._save_last_read_message(0)
-
     def get_unread_messages(self, chat_id: int):
         response = self._api_helper.get(
             f'chats/{chat_id}/messages',
             self._access_token,
-            last_read=self._load_last_read_message()
+            last_read=self._load_last_read_message(chat_id=chat_id)
         )
 
         if response.status_code == 200:
             messages_data = response.json().get('results')
             for message_data in messages_data:
                 self._handle_message(None, message_data)
-
-    def _connect_to_chat(self, chat_id: int):
-        connection = self._api_helper.connect_to_chat(chat_id, self._access_token)
-        self._connections.update({chat_id: connection})
-        connection.on_message = self._handle_message
-        return connection
 
     def run_polling(self, load_unread_messages: bool = True):
         for chat_id in self.get_chat_ids():
@@ -326,39 +350,10 @@ class User:
         rel.signal(2, rel.abort)
         rel.dispatch()
 
-    def _send_message(self,
-                      chat_id: int,
-                      text: str,
-                      attach_files: bool = False,
-                      files: Iterable[str] = (),
-                      files_password: str = None,
-                      is_reply: bool = False,
-                      reply_on: int = None,
-                      initial_message: bool = False
-                      ):
-
-        connection: websocket.WebSocketApp = self._connections.get(chat_id)
-
-        if not connection:
-            connection = self._connect_to_chat(chat_id)
-
-        if not attach_files:
-            message_string = json.dumps({
-                'type': 'text',
-                'text': text,
-                'files_password': files_password,
-                'encryption_type': 'RSA',
-                'initial': initial_message,
-                'is_reply': is_reply,
-                'reply_on': reply_on
-            })
-            connection.send(message_string)
-
     def send_message(self, chat_id: int, text: str):
         self._send_message(chat_id, text)
 
     def delete(self):
-
         response = self._api_helper.delete(
             f'users/{self._id}',
             self._access_token,
@@ -366,6 +361,5 @@ class User:
         )
 
         if response.status_code == 204:
+            self._delete_user_from_db()
             return True
-
-        self._delete_user_from_db()
