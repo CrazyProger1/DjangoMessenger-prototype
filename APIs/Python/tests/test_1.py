@@ -12,7 +12,7 @@ class TestUser(unittest.TestCase):
         self.user.login()
 
         self.assertIsNotNone(self.user.access_token)
-        self.assertIsNotNone(self.user.id)
+        self.assertIsNotNone(self.user._id)
 
     def test_delete(self):
         self.user.delete()
@@ -24,18 +24,18 @@ class TestUser(unittest.TestCase):
         self.assertNotEqual(access_before, self.user.access_token)
 
     def test_change_names(self):
-        names_before = (self.user.first_name, self.user.last_name)
+        names_before = (self.user._first_name, self.user._last_name)
         self.user.change_names('test', 'testov')
         self.user.login()
-        names_after = (self.user.first_name, self.user.last_name)
+        names_after = (self.user._first_name, self.user._last_name)
 
         self.assertNotEqual(names_before, names_after)
 
     def test_change_username(self):
-        username_before = self.user.username
+        username_before = self.user._username
         self.user.change_username('testuser2')
         self.user.login()
-        self.assertNotEqual(username_before, self.user.username)
+        self.assertNotEqual(username_before, self.user._username)
 
     def tearDown(self) -> None:
         try:

@@ -19,16 +19,16 @@ class User:
             session_filepath: str = 'session.json',
             save_tokens: bool = True,
             host: str = None):
-        self.username = username
-        self.password = password
-        self.email = email_address
-        self.session_filepath = session_filepath
-        self.save_tokens = save_tokens
-        self.host = host
+        self._username = username
+        self._password = password
+        self._email = email_address
+        self._session_filepath = session_filepath
+        self._save_tokens = save_tokens
+        self._host = host
 
-        self.id: int | None = None
-        self.first_name: str | None = None
-        self.last_name: str | None = None
+        self._id: int | None = None
+        self._first_name: str | None = None
+        self._last_name: str | None = None
 
         self._access_token: str | None = None
         self._refresh_token: str | None = None
@@ -36,16 +36,40 @@ class User:
         self._message_handlers = {}
         self._connections = {}
 
-        self._api_helper: APIHelper = APIHelper(self.host)
+        self._api_helper: APIHelper = APIHelper(self._host)
 
         self._load_tokens()
 
+    @property
+    def username(self):
+        return self._username
+
+    @property
+    def email(self):
+        return self._email
+
+    @property
+    def id(self):
+        return self._id
+
+    @property
+    def first_name(self):
+        return self._first_name
+
+    @property
+    def access_token(self):
+        return self._access_token
+
+    @property
+    def last_name(self):
+        return self._last_name
+
     def _load_tokens(self):
-        if not self.save_tokens:
+        if not self._save_tokens:
             return
 
-        if os.path.exists(self.session_filepath):
-            with open(self.session_filepath, 'r') as session_file:
+        if os.path.exists(self._session_filepath):
+            with open(self._session_filepath, 'r') as session_file:
                 try:
                     tokens: dict = json.load(session_file)
                 except json.decoder.JSONDecodeError:
@@ -55,10 +79,10 @@ class User:
                 self._refresh_token = tokens.get('refresh')
 
     def _save_tokens(self):
-        if not self.save_tokens:
+        if not self._save_tokens:
             return
 
-        with open(self.session_filepath, 'w') as session_file:
+        with open(self._session_filepath, 'w') as session_file:
             json.dump(
                 {
                     'access': self._access_token,
@@ -88,18 +112,18 @@ class User:
         )
 
         data: dict = response.json()
-        self.username = data.get('username')
-        self.id = data.get('id')
-        self.email = data.get('email')
-        self.first_name = data.get('first_name')
-        self.last_name = data.get('last_name')
+        self._username = data.get('username')
+        self._id = data.get('id')
+        self._email = data.get('email')
+        self._first_name = data.get('first_name')
+        self._last_name = data.get('last_name')
         return True
 
     def login(self):
         response = self._api_helper.post(
             {
-                'username': self.username,
-                'password': self.password
+                'username': self._username,
+                'password': self._password
             },
             'users/token',
             error401=WrongCredentialsProvidedError
@@ -116,9 +140,9 @@ class User:
     def register(self):
         response = self._api_helper.post(
             {
-                'username': self.username,
-                'password': self.password,
-                'email': self.email
+                'username': self._username,
+                'password': self._password,
+                'email': self._email
             },
             'users',
             error400=WrongDataProvidedError
@@ -141,8 +165,8 @@ class User:
 
         match response.status_code:
             case 200:
-                self.first_name = first_name
-                self.last_name = last_name
+                self._first_name = first_name
+                self._last_name = last_name
                 return True
 
     def change_username(self, username: str):
@@ -158,7 +182,7 @@ class User:
 
         match response.status_code:
             case 200:
-                self.username = username
+                self._username = username
                 return True
 
     def create_bot(self, name: str) -> Bot:
@@ -242,7 +266,7 @@ class User:
 
         for handler, options in self._message_handlers.items():
             if options.get('ignore_my'):
-                if self.id == sender_data.get('id'):
+                if self._id == sender_data.get('id'):
                     continue
 
             handler(Message(**message_data, sender=Sender(**sender_data)))
@@ -314,13 +338,9 @@ class User:
     def send_message(self, chat_id: int, text: str):
         self._send_message(chat_id, text)
 
-    @property
-    def access_token(self):
-        return self._access_token
-
     def delete(self):
         response = self._api_helper.delete(
-            f'users/{self.id}',
+            f'users/{self._id}',
             self._access_token,
             error401=WrongCredentialsProvidedError
         )
