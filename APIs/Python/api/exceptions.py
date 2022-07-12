@@ -23,5 +23,5 @@ class RefreshExpiredError(BaseAPIError):
     pass
 
 
-class ChatOverflowError(BaseAPIError):
+class ChatMemberError(BaseAPIError):
     pass

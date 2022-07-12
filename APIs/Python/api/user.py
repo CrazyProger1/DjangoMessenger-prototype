@@ -207,7 +207,7 @@ class User:
             f'chats/{chat_id}/members',
             self._access_token,
             error400=WrongDataProvidedError,
-            error403=ChatOverflowError
+            error403=ChatMemberError
         )
 
         if response.status_code == 201:

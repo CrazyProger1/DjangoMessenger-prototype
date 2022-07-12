@@ -4,6 +4,8 @@ from bots.extractors import extract_bot_from_request
 
 
 class IsAuthenticatedOrBot(permissions.BasePermission):
+    message = 'Authentication credentials were not provided.'
+
     def has_permission(self, request, view):
         if bool(request.user and request.user.is_authenticated):
             return True
@@ -13,6 +15,8 @@ class IsAuthenticatedOrBot(permissions.BasePermission):
 
 
 class IsChatExists(permissions.BasePermission):
+    message = 'Chat with that id is not exists.'
+
     def has_permission(self, request, view):
         try:
             chat: Chat = get_chat_by_id(view.kwargs.get('chat_pk'))
@@ -24,6 +28,8 @@ class IsChatExists(permissions.BasePermission):
 
 
 class IsOwnerOrReadOnly(permissions.BasePermission):
+    message = 'This action is only available to the owner.'
+
     def has_object_permission(self, request, view, obj):
         if request.method in permissions.SAFE_METHODS:
             return True
@@ -32,6 +38,8 @@ class IsOwnerOrReadOnly(permissions.BasePermission):
 
 
 class IsChatOwnerOrChatIsPublicOrReadOnly(permissions.BasePermission):
+    message = 'This action is only available to the owner.'
+
     def has_permission(self, request, view):
         if request.method in permissions.SAFE_METHODS:
             return True
@@ -46,14 +54,13 @@ class IsChatOwnerOrChatIsPublicOrReadOnly(permissions.BasePermission):
 
 
 class IsChatFitOrReadOnly(permissions.BasePermission):
+    message = 'This is not a group chat, the maximum number of members is 2.'
+
     def has_permission(self, request, view):
         if request.method in permissions.SAFE_METHODS:
             return True
 
-        try:
-            chat: Chat = get_chat_by_id(view.kwargs.get('chat_pk'))
-        except models.ObjectDoesNotExist:
-            return False
+        chat: Chat = get_chat_by_id(view.kwargs.get('chat_pk'))
 
         if chat.group:
             return True
@@ -65,6 +72,8 @@ class IsChatFitOrReadOnly(permissions.BasePermission):
 
 
 class IsInChatOrAddSelfOnly(permissions.BasePermission):
+    message = 'You must be a member of the chat to add other.'
+
     def has_permission(self, request, view):
         if request.method in permissions.SAFE_METHODS:
             return True

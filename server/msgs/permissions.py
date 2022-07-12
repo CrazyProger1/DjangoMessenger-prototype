@@ -4,6 +4,8 @@ from bots.extractors import extract_bot_from_request
 
 
 class IsAuthenticatedOrBot(permissions.BasePermission):
+    message = 'Authentication credentials were not provided.'
+
     def has_permission(self, request, view):
         if bool(request.user and request.user.is_authenticated):
             return True
@@ -13,6 +15,8 @@ class IsAuthenticatedOrBot(permissions.BasePermission):
 
 
 class IsChatMember(permissions.BasePermission):
+    message = 'You must be a member of the chat to perform this action.'
+
     def has_permission(self, request, view):
         chat_id = view.kwargs.get('chat_pk')
 

@@ -20,7 +20,7 @@ class TestChat(unittest.TestCase):
     def test_chat_overflow(self):
         chat_id = self.user.create_chat('bla bla bla', False, False)
         self.user.add_chat_member(chat_id, self.user2.id)
-        self.assertRaises(api.exceptions.ChatOverflowError, lambda: self.user.add_chat_member(chat_id, self.user3.id))
+        self.assertRaises(api.exceptions.ChatMemberError, lambda: self.user.add_chat_member(chat_id, self.user3.id))
 
     def tearDown(self) -> None:
         self.user.delete()
