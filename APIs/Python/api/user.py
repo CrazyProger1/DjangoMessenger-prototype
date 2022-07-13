@@ -31,11 +31,10 @@ class User:
         self._host = host
 
         self._message_handlers = {}
+        self._connections = {}
 
         self._api_helper: APIHelper = APIHelper(self._host)
         self._db_helper: DatabaseHelper = DatabaseHelper()
-
-        self._api_helper.set_message_handler(self._filter_message)
 
     @property
     def username(self):
@@ -57,7 +56,7 @@ class User:
     def last_name(self):
         return self._last_name
 
-    def _filter_message(self, message: Message):
+    def _handle_message(self, message: Message):
         for handler, options in self._message_handlers.items():
             if options.get('ignore_my'):
                 if self._id == message.sender.id and message.sender.type == 'user':
@@ -65,11 +64,23 @@ class User:
 
             handler(message)
 
+    def _connect_to_chat(self, chat_id: int, **kwargs):
+        connection = self._api_helper.connect_to_chat(
+            chat_id=chat_id,
+            access_token=self._access_token,
+            message_handler=self._handle_message,
+            **kwargs)
+
+        self._connections.update({chat_id: connection})
+        return connection
+
     def change_username(self, username: str):
         if self._api_helper.change_user_data(
                 data={
                     'username': username,
-                }):
+                },
+                access_token=self._access_token
+        ):
             self._username = username
             # save to db
 
@@ -78,7 +89,8 @@ class User:
                 data={
                     'first_name': first_name,
                     'last_name': last_name
-                }):
+                },
+                access_token=self._access_token):
             self._first_name = first_name
             self._last_name = last_name
             # save to db
@@ -87,8 +99,11 @@ class User:
         pass
 
     def send_message(self, chat_id: int, text: str) -> int:
+        if not self._connections.get(chat_id):
+            self._connect_to_chat(chat_id)
+
         return self._api_helper.send_message(
-            chat_id=chat_id,
+            connection=self._connections.get(chat_id),
             text=text,
             sender_private_key=None,
             sender_public_key=None,
@@ -97,12 +112,10 @@ class User:
         )
 
     def register(self):
-        self._api_helper.register(
-
+        self._access_token, self._refresh_token = self._api_helper.register(
             username=self._username,
             password=self._password,
-            email=self._email
-
+            email=self._email,
         )
         self.update_user_info()
 
@@ -115,7 +128,7 @@ class User:
         #     self.update_user_info()
         #     return
 
-        self._api_helper.login(
+        self._access_token, self._refresh_token = self._api_helper.login(
 
             username=self._username,
             password=self._password
@@ -124,15 +137,15 @@ class User:
         self.update_user_info()
 
     def delete(self):
-        if self._api_helper.delete_user():
+        if self._api_helper.delete_user(self._access_token):
             pass
             # delete from db
 
     def refresh_access(self):
-        self._api_helper.refresh_access()
+        self._access_token = self._api_helper.refresh_access(self._refresh_token)
 
     def update_user_info(self):
-        data = self._api_helper.get_user_info()
+        data = self._api_helper.get_user_info(self._access_token)
 
         self._username = data.get('username')
         self._id = data.get('id')
@@ -149,26 +162,29 @@ class User:
         return decorator
 
     def run_polling(self, load_unread_messages: bool = True):
-        for chat_id in self._api_helper.get_chat_ids():
-            self._api_helper.connect_to_chat(
+        for chat_id in self._api_helper.get_chat_ids(self._access_token):
+            self._connect_to_chat(
                 chat_id=chat_id,
                 load_unread_messages=load_unread_messages,
-                last_read_message=0  # load from db
+                last_read_message=0,
+
             )
 
-        rel.signal(2, rel.abort)
-        rel.dispatch()
+            rel.signal(2, rel.abort)
+            rel.dispatch()
 
     def create_bot(self, name: str) -> Bot:
         return self._api_helper.create_bot(
-            name=name
+            name=name,
+            access_token=self._access_token
         )
 
     def create_chat(self, name: str, group: bool = False, private: bool = False) -> int:
         return self._api_helper.create_chat(
             name=name,
             group=group,
-            private=private
+            private=private,
+            access_token=self._access_token
         )
         # save to db
 
@@ -176,5 +192,6 @@ class User:
         return self._api_helper.add_chat_member(
             chat_id=chat_id,
             user_id=user_id,
-            bot_id=bot_id
+            bot_id=bot_id,
+            access_token=self._access_token
         )

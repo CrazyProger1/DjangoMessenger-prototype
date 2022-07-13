@@ -4,6 +4,7 @@ from .models import *
 from .singleton import *
 
 
+@singleton
 class DatabaseHelper:
     def __init__(self, path: str = None):
         self._db_path = path or DB_PATH

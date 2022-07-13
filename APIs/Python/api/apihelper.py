@@ -11,34 +11,16 @@ from .encryption import *
 from .message import *
 from .bot import *
 
-from typing import Iterable, Type
+from typing import Iterable, Type, Callable
 
 
+@singleton
 class APIHelper:
     SUCCESS_CODES = (200, 201)
 
     def __init__(self, host: str = None):
         self._host = HOST or host
         self._adjust_websocket_host()
-        self._connections = {}
-        self._access_token = None
-        self._refresh_token = None
-        self._message_handler = lambda msg: None
-
-    @property
-    def access_token(self):
-        return self._access_token
-
-    @property
-    def refresh_token(self):
-        return self._refresh_token
-
-    def set_tokens(self, access_token: str, refresh_token: str):
-        self._access_token = access_token
-        self._refresh_token = refresh_token
-
-    def set_message_handler(self, func):
-        self._message_handler = func
 
     def _adjust_websocket_host(self):
         if 'https' in self._host:
@@ -51,12 +33,13 @@ class APIHelper:
     def _form_url(self, obj: str):
         return self._host + 'api/' + API_VERSION + '/' + obj + '/'
 
-    def _form_headers(self) -> dict | None:
-        if not self._access_token:
+    @staticmethod
+    def _form_headers(access_token: str) -> dict | None:
+        if not access_token:
             return None
 
         headers = {
-            'Authorization': TOKEN_KEYWORD + ' ' + self._access_token
+            'Authorization': TOKEN_KEYWORD + ' ' + access_token
         }
         return headers
 
@@ -78,11 +61,6 @@ class APIHelper:
 
         return response
 
-    def _on_message(self, connection, string_data):
-        data: dict = json.loads(string_data)
-        message = self._parse_message(data=data)
-        self._message_handler(message)
-
     @staticmethod
     def _define_message_type(attach_files: bool, files: Iterable[str]):
         if not attach_files:
@@ -92,29 +70,22 @@ class APIHelper:
         print(extensions)
         return 'document'
 
-    @staticmethod
-    def _parse_message(data) -> Message:
-        message_data = data.get('message')
-        sender_data = data.get('sender')
-        return Message(**message_data, sender=Sender(**sender_data))
-
     def set_host(self, host: str):
         self._host = host
         self._adjust_websocket_host()
 
-    def post(self, data: dict, obj: str = 'users', **exception_classes) -> requests.Response:
-        response = requests.post(
+    def post(self, data: dict, obj: str = 'users', access_token: str = None, **exception_classes) -> requests.Response:
+        return self._handle_errors(requests.post(
             url=self._form_url(obj),
             json=data,
-            headers=self._form_headers()
-        )
-
-        return self._handle_errors(response, **exception_classes)
+            headers=self._form_headers(access_token=access_token)
+        ), **exception_classes)
 
     def put(self,
             data: dict,
             obj: str = 'users',
             partially: bool = False,
+            access_token: str = None,
             **exception_classes
             ) -> requests.Response:
 
@@ -122,55 +93,64 @@ class APIHelper:
             return self._handle_errors(requests.put(
                 url=self._form_url(obj),
                 json=data,
-                headers=self._form_headers()
-            ), **exception_classes)
+                headers=self._form_headers(access_token=access_token)), **exception_classes)
         return self._handle_errors(requests.patch(
             url=self._form_url(obj),
             json=data,
-            headers=self._form_headers()
-        ), **exception_classes)
+            headers=self._form_headers(access_token=access_token)), **exception_classes)
 
-    def get(self, obj: str = 'users', params: dict = None, **exception_classes):
+    def get(self, obj: str = 'users', params: dict = None, access_token: str = None, **exception_classes):
         return self._handle_errors(requests.get(
             url=self._form_url(obj),
-            headers=self._form_headers(),
-            params=params
-        ), **exception_classes)
+            headers=self._form_headers(access_token=access_token),
+            params=params), **exception_classes)
 
-    def delete(self, obj: str = 'users', **exception_classes):
+    def delete(self, obj: str = 'users', access_token: str = None, **exception_classes):
         return self._handle_errors(
             requests.delete(
                 url=self._form_url(obj),
-                headers=self._form_headers(),
-
+                headers=self._form_headers(access_token=access_token),
             ),
             **exception_classes
         )
 
+    @staticmethod
+    def _handle_ws_message(handler: Callable, data: dict):
+        message = Message.de_json(data.get('message'))
+        sender = Sender.de_json(data.get('sender'))
+        message.sender = sender
+        handler(message)
+
     def connect_to_chat(
             self,
             chat_id: int, load_unread_messages: bool = False,
-            last_read_message: int = 0
+            last_read_message: int = 0,
+            access_token: str = None,
+            message_handler: Callable[[Message], None] = None
     ):
         if load_unread_messages:
-            for unread_msg in self.get_unread_messages(chat_id=chat_id,
-                                                       last_read_message=last_read_message):
-                self._message_handler(unread_msg)
+            for unread_msg in self.get_unread_messages(
+                    chat_id=chat_id,
+                    last_read_message=last_read_message,
+                    access_token=access_token):
+
+                if message_handler:
+                    self._handle_ws_message(message_handler, unread_msg)
 
         websocket.enableTrace(False)
         ws = websocket.WebSocketApp(f"{self.websocket_host}ws/chat/{chat_id}/",
-                                    header=self._form_headers())
+                                    header=self._form_headers(access_token=access_token))
 
         ws.run_forever(dispatcher=rel)
-        self._connections.update({
-            chat_id: ws
-        })
-        ws.on_message = self._on_message
+
+        if message_handler:
+            ws.on_message = lambda conn, msg: self._handle_ws_message(message_handler, json.loads(msg))
+
         return ws
 
     def send_message(
             self,
-            chat_id: int,
+            connection,
             text: str = None,
             attach_files: bool = False,
             files: Iterable[str] = (),
@@ -183,9 +163,6 @@ class APIHelper:
             receiver_public_key: bytes = None,
             encryption_class: Type[EncryptionType] | None = RSA
     ) -> int:
-        connection: websocket.WebSocketApp = self._connections.get(chat_id)
-        if not connection:
-            connection = self.connect_to_chat(chat_id)
 
         body = {
             'encryption_type': encryption_class.__class__.__name__,
@@ -217,7 +194,7 @@ class APIHelper:
 
         connection.send(json.dumps(body))
 
-    def login(self, username: str, password: str) -> bool:
+    def login(self, username: str, password: str) -> tuple[str, str]:
         response = self.post(
             {
                 'username': username,
@@ -229,22 +206,21 @@ class APIHelper:
 
         if response.status_code == 200:
             data: dict = response.json()
-            self._access_token = data.get('access')
-            self._refresh_token = data.get('refresh')
-            return True
+            return data.get('access'), data.get('refresh')
 
-    def get_user_info(self) -> dict:
+    def get_user_info(self, access_token: str) -> dict:
         response = self.get(
             'users/me',
+            access_token=access_token
         )
 
         data: dict = response.json()
         return data
 
-    def refresh_access(self) -> bool:
+    def refresh_access(self, refresh_token: str) -> str:
         response = self.post(
             {
-                'refresh': self._refresh_token
+                'refresh': refresh_token
             },
             'users/token/refresh',
             error401=RefreshExpiredError
@@ -252,10 +228,9 @@ class APIHelper:
 
         if response.status_code == 200:
             data: dict = response.json()
-            self._access_token = data.get('access')
-            return True
+            return data.get('access')
 
-    def register(self, username: str, password: str, email: str) -> bool:
+    def register(self, username: str, password: str, email: str) -> tuple[str, str]:
         response = self.post(
             {
                 'username': username,
@@ -263,7 +238,7 @@ class APIHelper:
                 'email': email
             },
             'users',
-            error400=WrongDataProvidedError
+            error400=WrongDataProvidedError,
         )
 
         if response.status_code == 201:
@@ -272,40 +247,44 @@ class APIHelper:
                 password=password
             )
 
-    def change_user_data(self, data: dict) -> bool:
+    def change_user_data(self, data: dict, access_token: str) -> bool:
         response = self.put(
             data,
             'users/me',
             partially=True,
-            error401=WrongCredentialsProvidedError
+            error401=WrongCredentialsProvidedError,
+            access_token=access_token
         )
 
         if response.status_code == 200:
             return True
 
-    def delete_user(self) -> bool:
+    def delete_user(self, access_token: str) -> bool:
         response = self.delete(
             f'users/me',
-            error401=WrongCredentialsProvidedError
+            error401=WrongCredentialsProvidedError,
+            access_token=access_token
         )
 
         if response.status_code == 204:
             return True
 
-    def get_unread_messages(self, chat_id: int, last_read_message: int = 0) -> Iterable[Message]:
+    def get_unread_messages(self, chat_id: int, access_token: str, last_read_message: int = 0, ) -> Iterable[dict]:
         response = self.get(
             f'chats/{chat_id}/messages',
-            last_read=last_read_message
+            last_read=last_read_message,
+            access_token=access_token
         )
 
         if response.status_code == 200:
             messages_data = response.json().get('results')
             for message_data in messages_data:
-                yield self._parse_message(message_data)
+                yield message_data
 
-    def get_chat_ids(self) -> Iterable[int]:
+    def get_chat_ids(self, access_token: str) -> Iterable[int]:
         response = self.get(
-            'chats/members/my',
+            obj='chats/members/my',
+            access_token=access_token
         )
         results = response.json().get('results')
 
@@ -313,14 +292,15 @@ class APIHelper:
             for result in results:
                 yield result.get('chat')
 
-    def create_bot(self, name: str) -> Bot:
+    def create_bot(self, name: str, access_token: str) -> Bot:
         response = self.post(
             {
                 'name': name
             },
-            'bots',
+            obj='bots',
             error400=WrongDataProvidedError,
-            error401=WrongCredentialsProvidedError
+            error401=WrongCredentialsProvidedError,
+            access_token=access_token
         )
 
         if response.status_code == 201:
@@ -329,7 +309,7 @@ class APIHelper:
             bot = Bot(**data)
             return bot
 
-    def create_chat(self, name: str, group: bool = False, private: bool = False) -> int:
+    def create_chat(self, name: str, access_token: str, group: bool = False, private: bool = False) -> int:
         response = self.post(
             {
                 'name': name,
@@ -337,20 +317,16 @@ class APIHelper:
                 'private': private
             },
             'chats',
+            access_token=access_token,
             error400=WrongDataProvidedError
         )
         if response.status_code == 201:
             data = response.json()
 
             chat_id = data.get('id')
-            self.connect_to_chat(
-                chat_id=chat_id,
-                load_unread_messages=True,
-                last_read_message=0
-            )
             return chat_id
 
-    def add_chat_member(self, chat_id: int, user_id: int = None, bot_id: int = None):
+    def add_chat_member(self, chat_id: int, access_token: str, user_id: int = None, bot_id: int = None):
         response = self.post(
             {
                 'user': user_id,
@@ -359,7 +335,8 @@ class APIHelper:
             },
             f'chats/{chat_id}/members',
             error400=WrongDataProvidedError,
-            error403=ChatMemberError
+            error403=ChatMemberError,
+            access_token=access_token
         )
 
         if response.status_code == 201:
