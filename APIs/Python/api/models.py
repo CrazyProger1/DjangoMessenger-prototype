@@ -10,6 +10,10 @@ class ChatModel(BaseModel):
     server_id = peewee.IntegerField(unique=True, null=False)
     name = peewee.TextField(null=True)
     last_read_message = peewee.IntegerField(default=0)
+    group = peewee.BooleanField(default=False)
+    public_key = peewee.TextField(null=True)
+    private_key = peewee.TextField(null=True)
+    interlocutor_public_key = peewee.TextField(null=True)
 
     class Meta:
         table_name = 'Chat'

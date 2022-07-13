@@ -14,7 +14,7 @@ from .services import *
 from bots.extractors import extract_bot_from_scope
 
 
-class ChatConsumer(websocket.WebsocketConsumer):
+class ChatConsumer(websocket.WebsocketConsumer):  # need to rewrite
     def __init__(self, *args, **kwargs):
         websocket.WebsocketConsumer.__init__(self, *args, **kwargs)
 
