@@ -34,6 +34,9 @@ class ChatConsumer(websocket.WebsocketConsumer):
         try:
             self.chat = get_chat_by_id(self.chat_id)
 
+            if self.chat is None:
+                raise exceptions.DenyConnection()
+
             if self.user.is_authenticated:
                 self.chat_member = find_chat_members(chat=self.chat_id, user=self.user.pk).first()
             elif self.bot:

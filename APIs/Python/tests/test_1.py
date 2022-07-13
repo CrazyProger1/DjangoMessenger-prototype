@@ -11,7 +11,7 @@ class TestUser(unittest.TestCase):
     def test_login(self):
         self.user.login()
 
-        self.assertIsNotNone(self.user.access_token)
+        self.assertIsNotNone(self.user._api_helper.access_token)
         self.assertIsNotNone(self.user.id)
 
     def test_delete(self):
@@ -19,14 +19,14 @@ class TestUser(unittest.TestCase):
         self.assertRaises(api.exceptions.WrongCredentialsProvidedError, self.user.login)
 
     def test_refresh_access(self):
-        access_before = self.user.access_token
+        access_before = self.user._api_helper.access_token
         self.user.refresh_access()
-        self.assertNotEqual(access_before, self.user.access_token)
+        self.assertNotEqual(access_before, self.user._api_helper.access_token)
 
     def test_change_names(self):
         names_before = (self.user._first_name, self.user._last_name)
         self.user.change_names('test', 'testov')
-        self.user.login()
+        self.user.update_user_info()
         names_after = (self.user._first_name, self.user._last_name)
 
         self.assertNotEqual(names_before, names_after)
@@ -34,15 +34,11 @@ class TestUser(unittest.TestCase):
     def test_change_username(self):
         username_before = self.user._username
         self.user.change_username('TestUser1')
-        self.user.login()
+        self.user.update_user_info()
         self.assertNotEqual(username_before, self.user._username)
 
-    def message_handler(self, msg):
-        if msg.text == 'bla bla bla':
-            self.bla_bla_got = True
-
     def test_send_message(self):
-        self.bla_bla_got = False
+        bla_bla_got = False
         try:
             chat_id = self.user.create_chat('testuserchat')
         except Exception as e:
@@ -50,9 +46,12 @@ class TestUser(unittest.TestCase):
             return
 
         self.user.send_message(chat_id, 'bla bla bla')
-        self.user.message_handler()(self.message_handler)
-        self.user.get_unread_messages(chat_id)
-        self.assertTrue(self.bla_bla_got)
+
+        for msg in self.user._api_helper.get_unread_messages(chat_id, 0):
+            if msg.text == 'bla bla bla':
+                bla_bla_got = True
+
+        self.assertTrue(bla_bla_got)
 
     def tearDown(self) -> None:
         try:

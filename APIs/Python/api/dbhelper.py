@@ -4,7 +4,6 @@ from .models import *
 from .singleton import *
 
 
-@singleton
 class DatabaseHelper:
     def __init__(self, path: str = None):
         self._db_path = path or DB_PATH
@@ -21,14 +20,15 @@ class DatabaseHelper:
             cls._meta.database = self._connection
 
     @staticmethod
-    def save(model, **data):
-        if data.get('server_id'):
-            instance = model.get_or_none(server_id=data.get('server_id'))
-        else:
-            instance = model.get_or_none(id=data.get('id'))
-
+    def save(model, instance=None, **data):
         if not instance:
-            return model.create(**data)
+            if data.get('server_id'):
+                instance = model.get_or_none(server_id=data.get('server_id'))
+            else:
+                instance = model.get_or_none(id=data.get('id'))
+
+            if not instance:
+                return model.create(**data)
 
         for key, value in data.items():
             instance.__setattr__(key, value or instance.__getattribute__(key))

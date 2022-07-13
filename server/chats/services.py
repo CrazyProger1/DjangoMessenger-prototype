@@ -18,11 +18,10 @@ def get_chat_members_by_chat(chat: Chat):
     return ChatMember.objects.filter(chat=chat)
 
 
-def get_chat_by_id(chat_id: int, ignore_errors: bool = False):
-    if not ignore_errors:
-        return Chat.objects.get(pk=chat_id)
-
-    return Chat.objects.filter(pk=chat_id)
+def get_chat_by_id(chat_id: int):
+    if chat_id is None:
+        return None
+    return Chat.objects.filter(pk=chat_id).first()
 
 
 def find_chat_members(**kwargs) -> Iterable[ChatMember]:
