@@ -70,24 +70,34 @@ class APIHelper:
         print(extensions)
         return 'document'
 
-    def set_host(self, host: str):
+    def set_host(
+            self,
+            host: str):
+
         self._host = host
         self._adjust_websocket_host()
 
-    def post(self, data: dict, obj: str = 'users', access_token: str = None, **exception_classes) -> requests.Response:
+    def post(
+            self,
+            data: dict,
+            obj: str = 'users',
+            access_token: str = None,
+            **exception_classes) -> requests.Response:
+
         return self._handle_errors(requests.post(
             url=self._form_url(obj),
             json=data,
             headers=self._form_headers(access_token=access_token)
         ), **exception_classes)
 
-    def put(self,
+    def put(
+            self,
             data: dict,
             obj: str = 'users',
             partially: bool = False,
             access_token: str = None,
             **exception_classes
-            ) -> requests.Response:
+    ) -> requests.Response:
 
         if not partially:
             return self._handle_errors(requests.put(
@@ -99,13 +109,24 @@ class APIHelper:
             json=data,
             headers=self._form_headers(access_token=access_token)), **exception_classes)
 
-    def get(self, obj: str = 'users', params: dict = None, access_token: str = None, **exception_classes):
+    def get(
+            self,
+            obj: str = 'users',
+            params: dict = None,
+            access_token: str = None,
+            **exception_classes):
+
         return self._handle_errors(requests.get(
             url=self._form_url(obj),
             headers=self._form_headers(access_token=access_token),
             params=params), **exception_classes)
 
-    def delete(self, obj: str = 'users', access_token: str = None, **exception_classes):
+    def delete(
+            self,
+            obj: str = 'users',
+            access_token: str = None,
+            **exception_classes):
+
         return self._handle_errors(
             requests.delete(
                 url=self._form_url(obj),
@@ -115,7 +136,10 @@ class APIHelper:
         )
 
     @staticmethod
-    def _handle_ws_message(handler: Callable, data: dict):
+    def _handle_ws_message(
+            handler: Callable,
+            data: dict):
+
         message = Message.de_json(data.get('message'))
         sender = Sender.de_json(data.get('sender'))
         message.sender = sender
@@ -126,8 +150,8 @@ class APIHelper:
             chat_id: int, load_unread_messages: bool = False,
             last_read_message: int = 0,
             access_token: str = None,
-            message_handler: Callable[[Message], None] = None
-    ):
+            message_handler: Callable[[Message], None] = None):
+
         if load_unread_messages:
             for unread_msg in self.get_unread_messages(
                     chat_id=chat_id,
@@ -138,8 +162,11 @@ class APIHelper:
                     self._handle_ws_message(message_handler, unread_msg)
 
         websocket.enableTrace(False)
-        ws = websocket.WebSocketApp(f"{self.websocket_host}ws/chat/{chat_id}/",
-                                    header=self._form_headers(access_token=access_token))
+
+        ws = websocket.WebSocketApp(
+            url=f"{self.websocket_host}ws/chat/{chat_id}/",
+            header=self._form_headers(access_token=access_token)
+        )
 
         ws.run_forever(dispatcher=rel)
 
@@ -161,8 +188,7 @@ class APIHelper:
             sender_private_key: bytes = None,
             sender_public_key: bytes = None,
             receiver_public_key: bytes = None,
-            encryption_class: Type[EncryptionType] | None = RSA
-    ) -> int:
+            encryption_class: Type[EncryptionType] | None = RSA) -> int:
 
         body = {
             'encryption_type': encryption_class.__class__.__name__,
@@ -194,7 +220,11 @@ class APIHelper:
 
         connection.send(json.dumps(body))
 
-    def login(self, username: str, password: str) -> tuple[str, str]:
+    def login(
+            self,
+            username: str,
+            password: str) -> tuple[str, str]:
+
         response = self.post(
             {
                 'username': username,
@@ -208,7 +238,10 @@ class APIHelper:
             data: dict = response.json()
             return data.get('access'), data.get('refresh')
 
-    def get_user_info(self, access_token: str) -> dict:
+    def get_user_info(
+            self,
+            access_token: str) -> dict:
+
         response = self.get(
             'users/me',
             access_token=access_token
@@ -217,7 +250,9 @@ class APIHelper:
         data: dict = response.json()
         return data
 
-    def refresh_access(self, refresh_token: str) -> str:
+    def refresh_access(
+            self,
+            refresh_token: str) -> str:
         response = self.post(
             {
                 'refresh': refresh_token
@@ -230,7 +265,12 @@ class APIHelper:
             data: dict = response.json()
             return data.get('access')
 
-    def register(self, username: str, password: str, email: str) -> tuple[str, str]:
+    def register(
+            self,
+            username: str,
+            password: str,
+            email: str) -> tuple[str, str]:
+
         response = self.post(
             {
                 'username': username,
@@ -247,7 +287,11 @@ class APIHelper:
                 password=password
             )
 
-    def change_user_data(self, data: dict, access_token: str) -> bool:
+    def change_user_data(
+            self,
+            data: dict,
+            access_token: str) -> bool:
+
         response = self.put(
             data,
             'users/me',
@@ -259,7 +303,10 @@ class APIHelper:
         if response.status_code == 200:
             return True
 
-    def delete_user(self, access_token: str) -> bool:
+    def delete_user(
+            self,
+            access_token: str) -> bool:
+
         response = self.delete(
             f'users/me',
             error401=WrongCredentialsProvidedError,
@@ -269,7 +316,12 @@ class APIHelper:
         if response.status_code == 204:
             return True
 
-    def get_unread_messages(self, chat_id: int, access_token: str, last_read_message: int = 0, ) -> Iterable[dict]:
+    def get_unread_messages(
+            self,
+            chat_id: int,
+            access_token: str,
+            last_read_message: int = 0, ) -> Iterable[dict]:
+
         response = self.get(
             f'chats/{chat_id}/messages',
             last_read=last_read_message,
@@ -281,7 +333,10 @@ class APIHelper:
             for message_data in messages_data:
                 yield message_data
 
-    def get_chat_ids(self, access_token: str) -> Iterable[int]:
+    def get_chat_ids(
+            self,
+            access_token: str) -> Iterable[int]:
+
         response = self.get(
             obj='chats/members/my',
             access_token=access_token
@@ -292,7 +347,11 @@ class APIHelper:
             for result in results:
                 yield result.get('chat')
 
-    def create_bot(self, name: str, access_token: str) -> Bot:
+    def create_bot(
+            self,
+            name: str,
+            access_token: str) -> Bot:
+
         response = self.post(
             {
                 'name': name
@@ -309,7 +368,13 @@ class APIHelper:
             bot = Bot(**data)
             return bot
 
-    def create_chat(self, name: str, access_token: str, group: bool = False, private: bool = False) -> int:
+    def create_chat(
+            self,
+            name: str,
+            access_token: str,
+            group: bool = False,
+            private: bool = False) -> int:
+
         response = self.post(
             {
                 'name': name,
@@ -326,7 +391,13 @@ class APIHelper:
             chat_id = data.get('id')
             return chat_id
 
-    def add_chat_member(self, chat_id: int, access_token: str, user_id: int = None, bot_id: int = None):
+    def add_chat_member(
+            self,
+            chat_id: int,
+            access_token: str,
+            user_id: int = None,
+            bot_id: int = None):
+
         response = self.post(
             {
                 'user': user_id,

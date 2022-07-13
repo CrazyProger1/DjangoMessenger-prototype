@@ -37,6 +37,10 @@ class User:
         self._db_helper: DatabaseHelper = DatabaseHelper()
 
     @property
+    def access_token(self):
+        return self._access_token
+
+    @property
     def username(self):
         return self._username
 
@@ -56,13 +60,15 @@ class User:
     def last_name(self):
         return self._last_name
 
+    def _filter_message(self, message: Message, **options):
+        if options.get('ignore_my'):
+            if self._id == message.sender.id and message.sender.type == 'user':
+                return False
+
     def _handle_message(self, message: Message):
         for handler, options in self._message_handlers.items():
-            if options.get('ignore_my'):
-                if self._id == message.sender.id and message.sender.type == 'user':
-                    continue
-
-            handler(message)
+            if self._filter_message(message, **options):
+                handler(message)
 
     def _connect_to_chat(self, chat_id: int, **kwargs):
         connection = self._api_helper.connect_to_chat(
@@ -74,6 +80,42 @@ class User:
         self._connections.update({chat_id: connection})
         return connection
 
+    def _save_to_db(self):
+        data = {
+            'username': self._username,
+            'server_id': self._id
+        }
+
+        if self._allow_token_saving:
+            data.update({
+                'access_token': self._access_token,
+                'refresh_token': self._refresh_token
+            })
+
+        self._db_helper.save(
+            UserModel,
+            **data
+        )
+
+    def _delete_from_db(self):
+        instance: UserModel = self._db_helper.load(
+            UserModel,
+            server_id=self._id,
+        )
+
+        if instance:
+            instance.delete_instance()
+
+    def _load_tokens_from_db(self) -> UserModel:
+        instance: UserModel = self._db_helper.load(
+            UserModel,
+            username=self._username,
+        )
+        self._access_token = instance.access_token or self._access_token
+        self._refresh_token = instance.refresh_token or self._refresh_token
+
+        return instance
+
     def change_username(self, username: str):
         if self._api_helper.change_user_data(
                 data={
@@ -83,6 +125,7 @@ class User:
         ):
             self._username = username
             # save to db
+            self._save_to_db()
 
     def change_names(self, first_name: str, last_name: str):
         if self._api_helper.change_user_data(
@@ -94,6 +137,7 @@ class User:
             self._first_name = first_name
             self._last_name = last_name
             # save to db
+            self._save_to_db()
 
     def change_password(self, password: str):
         pass
@@ -120,13 +164,11 @@ class User:
         self.update_user_info()
 
     def login(self):
-        # self._api_helper.set_tokens(
-        #     access_token=,
-        #     refresh_token=
-        # )
-        # if self._api_helper.refresh_access():
-        #     self.update_user_info()
-        #     return
+        if self._allow_token_saving:
+            self._load_tokens_from_db()
+            if self._api_helper.refresh_access(refresh_token=self._refresh_token):
+                self.update_user_info()
+                return
 
         self._access_token, self._refresh_token = self._api_helper.login(
 
@@ -138,8 +180,8 @@ class User:
 
     def delete(self):
         if self._api_helper.delete_user(self._access_token):
-            pass
             # delete from db
+            self._delete_from_db()
 
     def refresh_access(self):
         self._access_token = self._api_helper.refresh_access(self._refresh_token)
@@ -153,6 +195,7 @@ class User:
         self._first_name = data.get('first_name')
         self._last_name = data.get('last_name')
         # save to db
+        self._save_to_db()
 
     def message_handler(self, **options):
         def decorator(func):
@@ -180,13 +223,14 @@ class User:
         )
 
     def create_chat(self, name: str, group: bool = False, private: bool = False) -> int:
-        return self._api_helper.create_chat(
+        chat_id = self._api_helper.create_chat(
             name=name,
             group=group,
             private=private,
             access_token=self._access_token
         )
         # save to db
+        return chat_id
 
     def add_chat_member(self, chat_id: int, user_id: int = None, bot_id: int = None):
         return self._api_helper.add_chat_member(
